@@ -1,25 +1,25 @@
 import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFile, UseInterceptors,Query  } from '@nestjs/common';
 
-import { HospitalsService } from './hospitals.service';
-import { CreateHospitalDto } from './dto/create-hospital.dto';
-import { UpdateHospitalDto } from './dto/update-hospital.dto';
+import { DoctorsService } from './doctors.service';
+import { CreateDoctorDto } from './dto/create-doctor.dto';
+import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
  import { diskStorage } from 'multer';
 import { extname } from 'path';
+import * as bcrypt from 'bcrypt';
 
-
-@Controller('hospitals')
-export class HospitalsController {
-  constructor(private readonly hospitalsService: HospitalsService) {}
+@Controller('doctors')
+export class DoctorsController {
+  constructor(private readonly doctorsService: DoctorsService) {}
 
   @UseGuards(AuthGuard('jwt'))
 @Post()
 @UseInterceptors(
   FileInterceptor('file', {
     storage: diskStorage({
-      destination: './uploads/hospitals', // folder
+      destination: './uploads/doctors', // folder
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         callback(null, uniqueSuffix + extname(file.originalname));
@@ -28,27 +28,24 @@ export class HospitalsController {
   }),
 )
 async create(
-  @Body() dto: CreateHospitalDto,
+  @Body() dto: CreateDoctorDto,
   @UploadedFile() file?: Express.Multer.File, // 👈 optional
 ) {
   if (file) {
-    dto.logo = file.filename; // store filename or `/uploads/hospitals/${file.filename}`
+    dto.logo = file.filename; // store filename or `/uploads/doctors/${file.filename}`
   }
   dto.status = 1;
-  const hospital = await this.hospitalsService.create(dto);
+  dto.type = 'Doctor';
+  const hashed = await bcrypt.hash('12345', 10);
+  dto.password = hashed;
+
+  const doctor = await this.doctorsService.create(dto);
 
   return {
     success: true,
-    message: 'Hospital created successfully',
-    data: hospital,
+    message: 'Doctor created successfully',
+    data: doctor,
   };
-}
-
-@UseGuards(AuthGuard('jwt'))
-@Get('get-list')
-async getAll() {
-  const data = await this.hospitalsService.findAll();
-  return { records: data, success:true };
 }
 
   @UseGuards(AuthGuard('jwt'))
@@ -58,7 +55,7 @@ async getAll() {
     @Query('limit') limit: number = 10,
     @Body('keywords') searchTitle?: string,
   ) {
-    return this.hospitalsService.paginate(
+    return this.doctorsService.paginate(
       Number(page),
       Number(limit),
       searchTitle,
@@ -68,7 +65,7 @@ async getAll() {
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: number) {
-    const data = await this.hospitalsService.findOne(id);
+    const data = await this.doctorsService.findOne(id);
     return {
       success: true,
       data,
@@ -80,7 +77,7 @@ async getAll() {
 @UseInterceptors(
   FileInterceptor('file', {
     storage: diskStorage({
-      destination: './uploads/hospitals',
+      destination: './uploads/doctors',
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         callback(null, uniqueSuffix + extname(file.originalname));
@@ -90,18 +87,18 @@ async getAll() {
 )
 async update(
   @Param('id') id: number,
-  @Body() dto: UpdateHospitalDto,
+  @Body() dto: UpdateDoctorDto,
   @UploadedFile() file?: Express.Multer.File,   // 👈 optional
 ) {
   if (file) {
-    dto.logo = file.filename; // save just filename or `/uploads/hospitals/${file.filename}`
+    dto.logo = file.filename; // save just filename or `/uploads/doctors/${file.filename}`
   }
 
-  const data = await this.hospitalsService.update(id, dto);
+  const data = await this.doctorsService.update(id, dto);
 
   return {
     success: true,
-    message: 'Hospital updated successfully',
+    message: 'Doctor updated successfully',
     data,
   };
 }
@@ -112,18 +109,16 @@ async updateStatus(
   @Param('id') id: number,
   @Body('status') status: number,   // expect only status field
 ) {
-  const data = await this.hospitalsService.update(id, { status } as UpdateHospitalDto);
+  const data = await this.doctorsService.update(id, { status } as UpdateDoctorDto);
   return {
     success: true,
-    message: 'Hospital status updated successfully',
+    message: 'Doctor status updated successfully',
     data,
   };
 }
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: number) {
-    return this.hospitalsService.remove(id);
+    return this.doctorsService.remove(id);
   }
-
-
 }

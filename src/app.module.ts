@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { HospitalsModule } from './hospitals/hospitals.module';
 import { Hospital } from './hospitals/hospital.entity';
 
+import { DoctorsModule } from './doctors/doctors.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -20,7 +22,8 @@ import { Hospital } from './hospitals/hospital.entity';
     }),
     UsersModule,
     AuthModule,
-    HospitalsModule
+    HospitalsModule,
+    DoctorsModule
   ],
 })
 export class AppModule {}
