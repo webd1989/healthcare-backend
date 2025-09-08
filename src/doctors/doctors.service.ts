@@ -24,8 +24,13 @@ export class DoctorsService {
     };
   }
 
-  async findAll(): Promise<User[]> {
-    return this.doctorRepo.find();
+  async findAll(hospital_id: number): Promise<User[]> {
+    return this.doctorRepo.find({
+      where: {
+        hospital_id: hospital_id,
+        type: 'doctor',
+      },
+    });
   }
 
   async paginate(page: number, limit: number, searchTitle?: string) {

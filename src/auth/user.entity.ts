@@ -13,6 +13,9 @@ export class User {
   @Column({ nullable: true })
   hospital_id: number;
 
+  @Column({ nullable: true })
+  doctor_id: number;
+
   @Column()
   name: string;
 
