@@ -9,6 +9,9 @@ import { Hospital } from './hospitals/hospital.entity';
 import { DoctorsModule } from './doctors/doctors.module';
 import { StaffsModule } from './staffs/staffs.module';
 
+import { MedicinesModule } from './medicines/medicines.module';
+import { Medicines } from './medicines/medicines.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -18,14 +21,15 @@ import { StaffsModule } from './staffs/staffs.module';
       username: 'root',    // your mysql user
       password: '', // your mysql password
       database: 'heathcare_db',
-      entities: [User,Hospital],     // Entities you want to use
+      entities: [User,Hospital,Medicines], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
     UsersModule,
     AuthModule,
     HospitalsModule,
     DoctorsModule,
-    StaffsModule
+    StaffsModule,
+    MedicinesModule
   ],
 })
 export class AppModule {}
