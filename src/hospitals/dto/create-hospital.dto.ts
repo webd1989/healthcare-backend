@@ -13,6 +13,7 @@ export class CreateHospitalDto {
   @IsString()
   logo?: string;
 
+  @IsOptional()
   @IsNumber()
   status: number;
 }
