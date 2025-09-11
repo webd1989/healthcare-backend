@@ -34,6 +34,24 @@ export class User {
   @Column({ nullable: true })
   logo: string;
 
+  @Column({ nullable: true })
+  public_user_name: string;
+
+  @Column({ nullable: true })
+  profession: string;
+
+  @Column({ nullable: true })
+  specialty: string;
+
+  @Column({ nullable: true })
+  emr_use: string;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  timezone: string;
+
   @Column()
   status: number;
 
