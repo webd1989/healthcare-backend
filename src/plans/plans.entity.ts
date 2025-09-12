@@ -22,6 +22,24 @@ export class Plans {
   description: string;
 
   @Column()
+  templates: string;
+
+  @Column()
+  templates_description: string;
+
+  @Column()
+  medical_dictation: string;
+
+  @Column()
+  medical_dictation_description: string;
+
+  @Column()
+  ai_assisted: string;
+
+  @Column()
+  ai_assisted_description: string;
+
+  @Column()
   status: number;
 
   @CreateDateColumn({ type: 'timestamp' })

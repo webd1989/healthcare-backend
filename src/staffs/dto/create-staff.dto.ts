@@ -2,11 +2,11 @@ import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
 
 export class CreateStaffDto {
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   hospital_id: number;
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   doctor_id: number;
 

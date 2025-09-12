@@ -4,17 +4,13 @@ import { Transform } from 'class-transformer';
 
 export class CreatePlanDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Name cannot be empty' })
   name: string;
 
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(0, { message: 'monthly price must be 0 or greater' })
+  @Matches(/^\d+(\.\d{1,2})?$/, { message: 'monthly_price must be a valid number with up to 2 decimals' })
   monthly_price: string;
 
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(0, { message: 'monthly price for year must be 0 or greater' })
+  @Matches(/^\d+(\.\d{1,2})?$/, { message: 'monthly_price must be a valid number with up to 2 decimals' })
   monthly_price_for_year: string;
 
   @IsOptional()
@@ -22,8 +18,32 @@ export class CreatePlanDto {
   sort_description?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Description cannot be empty' })
   description?: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Template cannot be empty' })
+  templates: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Templates description cannot be empty' })
+  templates_description: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Medical dictation cannot be empty' })
+  medical_dictation: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Medical dictation description cannot be empty' })
+  medical_dictation_description: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'AI assisted cannot be empty' })
+  ai_assisted: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'AI assisted description cannot be empty' })
+  ai_assisted_description: string;
 
   @IsOptional()
   @IsNumber()

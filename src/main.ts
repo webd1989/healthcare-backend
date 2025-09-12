@@ -24,6 +24,9 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,   // 👈 important
+    transformOptions: {
+      enableImplicitConversion: true, // 👈 auto-convert string -> number
+    },
   }),
 );
 
