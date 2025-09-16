@@ -22,6 +22,9 @@ import { Timezones } from './timezones/timezones.entity';
 import { PlansModule } from './plans/plans.module';
 import { Plans } from './plans/plans.entity';
 
+import { PatientformsModule } from './patientforms/patientforms.module';
+import { Patientform } from './patientforms/patientforms.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -31,7 +34,7 @@ import { Plans } from './plans/plans.entity';
       username: 'root',    // your mysql user
       password: '', // your mysql password
       database: 'heathcare_db',
-      entities: [User, Hospital, Medicines, Countries, Timezones, Plans], // Entities you want to use
+      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
     UsersModule,
@@ -43,7 +46,8 @@ import { Plans } from './plans/plans.entity';
     CountriesModule,
     TimezonesModule,
     PlansModule,
-    PatientsModule
+    PatientsModule,
+    PatientformsModule
   ],
 })
 export class AppModule {}
