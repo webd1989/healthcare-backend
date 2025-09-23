@@ -21,6 +21,8 @@ import { Patientform } from './patientforms/patientforms.entity';
 import { RolesModule } from './roles/roles.module';
 import { Role } from './roles/role.entity';
 
+import { SuperUsersModule } from './supperusers/supperusers.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -44,7 +46,8 @@ import { Role } from './roles/role.entity';
     PlansModule,
     PatientsModule,
     PatientformsModule,
-    RolesModule
+    RolesModule,
+    SuperUsersModule
   ],
 })
 export class AppModule {}

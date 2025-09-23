@@ -9,7 +9,10 @@ export class User {
 
   @Column()
   type: string;
-  
+
+  @Column({ nullable: true })
+  role_id: number;
+
   @Column({ nullable: true })
   hospital_id: number;
 
