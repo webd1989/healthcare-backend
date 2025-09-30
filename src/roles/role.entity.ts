@@ -8,11 +8,8 @@ export class Role {
   @Column()
   name: string;
 
-  @Column()
-  address: string;
-
-  @Column({ nullable: true })
-  logo: string;
+  @Column({ type: 'text', nullable: true })
+  permissions: string;
 
   @Column()
   status: number;

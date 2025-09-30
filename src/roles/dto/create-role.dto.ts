@@ -5,6 +5,10 @@ export class CreateRoleDto {
   @IsNotEmpty()
   name: string;
 
+  @IsString()
+  @IsNotEmpty()
+  permissions: string;
+
   @IsOptional()
   @IsNumber()
   status: number;
