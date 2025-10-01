@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn , ManyToOne, JoinColumn} from 'typeorm';
+import { Role } from '../roles/role.entity';
 
 @Entity('users')
 
@@ -60,4 +61,9 @@ export class User {
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
+
+  @ManyToOne(() => Role, (role) => role.users, { eager: true })
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
+  
 }

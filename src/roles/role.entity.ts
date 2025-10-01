@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { User } from '../auth/user.entity';
 
 @Entity('roles')
 export class Role {
@@ -15,6 +16,9 @@ export class Role {
   status: number;
 
   @CreateDateColumn({ type: 'timestamp' })
-    created_at: Date;
+  created_at: Date;
+
+  @OneToMany(() => User, (user) => user.role)
+  users: User[];
 
 }
