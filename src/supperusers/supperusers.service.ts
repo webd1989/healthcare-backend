@@ -16,6 +16,12 @@ export class SuperUsersService {
   async create(dto: CreateSupperUsersDto): Promise<any> {
     const supperuser = this.supperUsersRepo.create(dto);
     const saved = await this.supperUsersRepo.save(supperuser);
+
+    // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    const userCode = `STF-${String(saved.id).padStart(4, '0')}`;
+
+    // Step 3️⃣: Update the same row
+    await this.supperUsersRepo.update(saved.id, { user_code: userCode });
     
      return {
       success: true,

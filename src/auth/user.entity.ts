@@ -9,6 +9,9 @@ export class User {
   id: number;
 
   @Column()
+  user_code: string;
+
+  @Column()
   type: string;
 
   @Column({ nullable: true })
@@ -32,7 +35,7 @@ export class User {
   @Column({ nullable: true })
   address: string;
 
-  @Column({ unique: true })
+  @Column({ nullable: true })
   mobile: string;
 
   @Column({ nullable: true })
@@ -58,6 +61,9 @@ export class User {
 
   @Column()
   status: number;
+
+  @Column({ nullable: true })
+  plan_id: number;
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;

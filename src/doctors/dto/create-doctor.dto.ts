@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { Column} from 'typeorm';
 
 export class CreateDoctorDto {
 
@@ -9,6 +10,10 @@ export class CreateDoctorDto {
   @IsOptional()
   @IsString()
   type: string;
+  
+  @IsOptional()
+  @IsString()
+  user_code: string;
 
   @IsString()
   @IsNotEmpty()
@@ -19,7 +24,8 @@ export class CreateDoctorDto {
   password: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty() 
+  @Column({ unique: true })
   email: string;
 
   @IsString()

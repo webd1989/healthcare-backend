@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
+import { CreateDoctorDtoSignup } from './dto/create-doctor-singup.dto';
 
 
 @Injectable()
@@ -16,12 +17,19 @@ export class DoctorsService {
   async create(dto: CreateDoctorDto): Promise<any> {
     const doctor = this.doctorRepo.create(dto);
     const saved = await this.doctorRepo.save(doctor);
-    
+
+    // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    const userCode = `DTR-${String(saved.id).padStart(4, '0')}`;
+
+    // Step 3️⃣: Update the same row
+    await this.doctorRepo.update(saved.id, { user_code: userCode });
+   
      return {
       success: true,
       message: 'Doctor created successfully',
       data: saved,
     };
+
   }
 
   async findAll(hospital_id: number): Promise<User[]> {
@@ -79,6 +87,23 @@ export class DoctorsService {
      return {
       success: true,
       message: 'Doctor deleted successfully',
+    };
+  }
+  
+  async createDoctor(dto: CreateDoctorDtoSignup): Promise<any> {
+    const doctor = this.doctorRepo.create(dto);
+    const saved = await this.doctorRepo.save(doctor);
+
+    // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    const userCode = `DTR-${String(saved.id).padStart(4, '0')}`;
+
+    // Step 3️⃣: Update the same row
+    await this.doctorRepo.update(saved.id, { user_code: userCode });
+    
+     return {
+      success: true,
+      message: 'Doctor created successfully',
+      data: saved,
     };
   }
 }

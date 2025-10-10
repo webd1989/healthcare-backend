@@ -3,6 +3,7 @@ import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFil
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
+import { CreateDoctorDtoSignup } from './dto/create-doctor-singup.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
@@ -14,7 +15,23 @@ import * as bcrypt from 'bcrypt';
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+@Post('/doctor-sign-up')
+  @UseInterceptors(FileInterceptor('file'))
+  async createDoctor(@Body() dto: CreateDoctorDtoSignup) {
+    dto.status = 1;
+    dto.type = 'Doctor';
+    dto.password = await bcrypt.hash(dto.password, 10);
+    dto.public_user_name = dto.name;
+    const doctor = await this.doctorsService.createDoctor(dto);
+
+    return {
+      success: true,
+      message: 'Doctor created successfully',
+      data: doctor,
+    };
+  }
+
+@UseGuards(AuthGuard('jwt'))
 @Post()
 @UseInterceptors(
   FileInterceptor('file', {
@@ -38,7 +55,6 @@ async create(
   dto.type = 'Doctor';
   const hashed = await bcrypt.hash('12345', 10);
   dto.password = hashed;
-
   const doctor = await this.doctorsService.create(dto);
 
   return {
@@ -128,6 +144,11 @@ async updateStatus(
   remove(@Param('id') id: number) {
     return this.doctorsService.remove(id);
   }
+
+  
+
 }
+
+
 
 
