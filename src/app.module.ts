@@ -26,6 +26,10 @@ import { SuperUsersModule } from './supperusers/supperusers.module';
 import { Orders } from './orders/orders.entity';
 import { OrdersModule } from './orders/orders.module';
 
+import { SupportTickets } from './support-tickets/support-tickets.entity';
+import { SupportTicketComments } from './support-tickets/support-ticket-comments.entity';
+import { SupportTicketsModule } from './support-tickets/support-tickets.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -35,7 +39,7 @@ import { OrdersModule } from './orders/orders.module';
       username: 'root',    // your mysql user
       password: '', // your mysql password
       database: 'heathcare_db',
-      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, Orders], // Entities you want to use
+      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, Orders, SupportTickets, SupportTicketComments], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
     UsersModule,
@@ -51,7 +55,8 @@ import { OrdersModule } from './orders/orders.module';
     PatientformsModule,
     RolesModule,
     SuperUsersModule,
-    OrdersModule
+    OrdersModule,
+    SupportTicketsModule
   ],
 })
 export class AppModule {}
