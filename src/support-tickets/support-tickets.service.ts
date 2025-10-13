@@ -2,15 +2,29 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupportTickets } from './support-tickets.entity';
+import { SupportTicketComments } from './support-ticket-comments.entity';
 import { CreateSupportTicketDto } from './dto/create-support-ticket.dto';
 import { UpdateSupportTicketDto } from './dto/update-support-ticket.dto';
+import { CreateSupportTicketCommentsDto } from './dto/create-support-ticket-comments.dto';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class SupportTicketsService {
   constructor(
     @InjectRepository(SupportTickets)
     private supportTicketRepo: Repository<SupportTickets>,
+
+    @InjectRepository(SupportTicketComments)
+    private supportTicketCommentsRepo: Repository<SupportTicketComments>,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+
   ) {}
+
+  async getUserById(user_id: number): Promise<User | null> {
+    return this.userRepo.findOne({ where: { id: user_id } });
+  }
 
   async create(dto: CreateSupportTicketDto): Promise<any> {
     const supportTicket = this.supportTicketRepo.create(dto);
@@ -31,6 +45,28 @@ export class SupportTicketsService {
     };
   }
   
+  async createComment(dto: CreateSupportTicketCommentsDto): Promise<any> {
+    const supportTicketComment = this.supportTicketCommentsRepo.create(dto);
+    const saved = await this.supportTicketCommentsRepo.save(supportTicketComment);
+     return {
+      success: true,
+      message: 'Support ticket comment created successfully',
+      data: saved,
+    };
+  }
+ async getAllComments(ticketID?: number): Promise<SupportTicketComments[]> {
+  if (ticketID) {
+    return this.supportTicketCommentsRepo.find({
+      where: { ticket_id: ticketID },
+      order: { id: 'DESC' }, // optional
+    });
+  }
+
+  // If no ticketID is provided, return all
+  return this.supportTicketCommentsRepo.find({
+    order: { id: 'DESC' }, // optional
+  });
+}
 
   async findAll(): Promise<SupportTickets[]> {
     return this.supportTicketRepo.find();

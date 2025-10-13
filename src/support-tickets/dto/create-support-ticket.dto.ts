@@ -4,7 +4,11 @@ export class CreateSupportTicketDto {
 
   @IsNumber()
   @IsNotEmpty({ message: 'Invalid user' })
-  user_id?: number;
+  user_id: number;
+
+  @IsOptional()
+  @IsString()
+  user_name: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Subject cannot be empty' })

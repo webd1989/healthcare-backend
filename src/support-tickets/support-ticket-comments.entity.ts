@@ -8,6 +8,12 @@ export class SupportTicketComments {
   
   @Column()
   ticket_id: number;
+  
+  @Column()
+  user_id: number;
+
+  @Column()
+  user_name: string;
 
   @Column()
   message: string;

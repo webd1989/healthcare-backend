@@ -11,6 +11,9 @@ export class SupportTickets {
   
   @Column()
   user_id: number;
+  
+  @Column()
+  user_name: string;
 
   @Column()
   subject: string;
