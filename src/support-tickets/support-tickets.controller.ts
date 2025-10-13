@@ -26,10 +26,18 @@ export class SupportTicketsController {
 
      if (!user) {
         throw new NotFoundException('User not found');
-      }
+    }
 
     dto.user_name = user.name;
     const supporTickets = await this.supporTicketsService.createComment(dto);
+
+    if(user.type == 'Doctor' && dto.status > 1){
+      await this.supporTicketsService.update(
+      supporTickets.ticket_id,
+      { status: dto.status } as UpdateSupportTicketDto
+    );
+    }
+
     return {
       success: true,
       message: 'Support ticket comment added successfully',

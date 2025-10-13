@@ -21,5 +21,9 @@ export class CreateSupportTicketCommentsDto {
     @IsOptional()
     @IsNumber()
     attachment: string;
+    
+    @IsOptional()
+    @IsNumber()
+    status: number;
 
 }

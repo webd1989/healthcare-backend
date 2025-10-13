@@ -48,6 +48,7 @@ export class SupportTicketsService {
   async createComment(dto: CreateSupportTicketCommentsDto): Promise<any> {
     const supportTicketComment = this.supportTicketCommentsRepo.create(dto);
     const saved = await this.supportTicketCommentsRepo.save(supportTicketComment);
+    
      return {
       success: true,
       message: 'Support ticket comment created successfully',
