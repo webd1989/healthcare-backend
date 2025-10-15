@@ -3,6 +3,10 @@ import { Type } from 'class-transformer';
 import { FormField } from './form-field.dto';
 
 export class CreatePatientformDto {
+  @IsNumber()
+  @IsNotEmpty()
+  doctor_id: number;
+  
   @IsString()
   @IsNotEmpty()
   name: string;

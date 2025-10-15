@@ -16,7 +16,18 @@ export class PatientsService {
   async create(dto: CreatePatientDto): Promise<any> {
     const patient = this.patientRepo.create(dto);
     const saved = await this.patientRepo.save(patient);
-    
+
+    // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    const userCode = saved.name
+      .toLowerCase()                // lowercase
+      .trim()                       // remove spaces at ends
+      .replace(/\s+/g, '-')         // replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, '') + // remove invalid characters
+    `-${saved.mobile}`;
+
+    // Step 3️⃣: Update the same row
+    await this.patientRepo.update(saved.id, { user_code: userCode });
+
      return {
       success: true,
       message: 'Patient created successfully',
@@ -28,42 +39,62 @@ export class PatientsService {
     return this.patientRepo.find({
       where: {
         hospital_id: hospital_id,
-        type: 'patient',
+        type: 'Patient',
       },
     });
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string) {
-      const query = this.patientRepo.createQueryBuilder('patient');
+ async getAllPatients(doctor_id: number, user_mobile: string): Promise<User[]> {
+    return this.patientRepo.find({
+      where: {
+        doctor_id: doctor_id,
+        mobile: user_mobile,
+        type: 'Patient',
+      },
+    });
+  }
 
-      // Always filter by type = Patient
-      query.where('patient.type = :type', { type: 'Patient' });
+  async paginate(
+    page: number,
+    limit: number,
+    searchTitle?: string,
+    doctorId?: number,
+  ) {
+    const query = this.patientRepo.createQueryBuilder('patient');
 
-      if (searchTitle) {
-        query.where(
-          'patient.name LIKE :search OR patient.email LIKE :search',
-          { search: `%${searchTitle}%` },
-        );
-      }
+    // Always filter by type = 'Patient'
+    query.where('patient.type = :type', { type: 'Patient' });
 
-      const [data, total] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+    // If doctorId > 0, add filter
+    if (doctorId && doctorId > 0) {
+      query.andWhere('patient.doctor_id = :doctorId', { doctorId });
+    }
 
-      return {
-        success: true,
-        data,
-        total,
-        page,
-        limit,
-      };
+    // If searchTitle provided, search by name or email
+    if (searchTitle && searchTitle.trim() !== '') {
+      query.andWhere(
+        '(patient.name LIKE :search OR patient.email LIKE :search)',
+        { search: `%${searchTitle}%` },
+      );
+    }
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      success: true,
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: number): Promise<User> {
     const patient = await this.patientRepo.findOne({ where: { id } });
     if (!patient) throw new NotFoundException(`Patient ${id} not found`);
-    
     return patient;
   }
 

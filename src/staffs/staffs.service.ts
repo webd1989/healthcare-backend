@@ -39,7 +39,7 @@ export class StaffsService {
     });
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string) {
+  async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
       const query = this.staffRepo.createQueryBuilder('staff');
 
       // Always filter by type = Staff
@@ -50,6 +50,11 @@ export class StaffsService {
           'staff.name LIKE :search OR staff.email LIKE :search',
           { search: `%${searchTitle}%` },
         );
+      }
+
+      // If doctorId > 0, add filter
+      if (doctorId && doctorId > 0) {
+        query.andWhere('staff.doctor_id = :doctorId', { doctorId });
       }
 
       const [data, total] = await query

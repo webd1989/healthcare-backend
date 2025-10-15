@@ -38,6 +38,8 @@ export class AuthService {
       name: user.name,
       type: user.type,
       plan_id: user.plan_id,
+      hospital_id: user.hospital_id,
+      doctor_id: user.doctor_id,
       role: user.role ? { id: user.role.id, name: user.role.name, permissions: user.role.permissions } : null,
     };
   }

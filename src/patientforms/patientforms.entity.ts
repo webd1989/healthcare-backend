@@ -7,6 +7,9 @@ export class Patientform {
 
   @Column()
   name: string;
+  
+  @Column()
+  doctor_id: number;
 
   @Column('json')
   form_field: string;

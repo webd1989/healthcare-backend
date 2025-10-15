@@ -46,23 +46,35 @@ async getAll(@Body('hospital_id') hospital_id: number) {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('keywords') searchTitle?: string,
+    @Body('doctor_id') doctorId?: number,
   ) {
     return this.patientsService.paginate(
       Number(page),
       Number(limit),
       searchTitle,
+      Number(doctorId),
     );
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get(':id')
-  async findOne(@Param('id') id: number) {
-    const data = await this.patientsService.findOne(id);
-    return {
-      success: true,
-      data,
-    };
-  }
+@UseGuards(AuthGuard('jwt'))
+@Post('get-patients-list')
+async getAllPatients(
+  @Body() body: { doctor_id: number; user_mobile: string }
+) {  
+  const { doctor_id, user_mobile } = body;
+  const data = await this.patientsService.getAllPatients(doctor_id, user_mobile);
+  return { records: data, success:true };
+}
+
+@UseGuards(AuthGuard('jwt'))
+@Get(':id')
+async findOne(@Param('id') id: number) {
+  const data = await this.patientsService.findOne(id);
+  return {
+    success: true,
+    data,
+  };
+}
 
 @UseGuards(AuthGuard('jwt'))
 @Post(':id')

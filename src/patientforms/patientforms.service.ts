@@ -27,7 +27,7 @@ export class PatientformsService {
     return this.patientformRepo.find();
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string) {
+  async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
       const query = this.patientformRepo.createQueryBuilder('patientform');
 
       if (searchTitle) {
@@ -37,6 +37,11 @@ export class PatientformsService {
         );
       }
 
+      // If doctorId > 0, add filter
+      if (doctorId && doctorId > 0) {
+        query.andWhere('patientform.doctor_id = :doctorId', { doctorId });
+      }
+      
       const [data, total] = await query
         .skip((page - 1) * limit)
         .take(limit)

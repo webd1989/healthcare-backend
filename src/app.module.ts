@@ -30,6 +30,9 @@ import { SupportTickets } from './support-tickets/support-tickets.entity';
 import { SupportTicketComments } from './support-tickets/support-ticket-comments.entity';
 import { SupportTicketsModule } from './support-tickets/support-tickets.module';
 
+import { Appointment } from './appointments/appointment.entity';
+import { AppointmentsModule } from './appointments/appointments.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -39,7 +42,7 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
       username: 'root',    // your mysql user
       password: '', // your mysql password
       database: 'heathcare_db',
-      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, Orders, SupportTickets, SupportTicketComments], // Entities you want to use
+      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, Orders, SupportTickets, SupportTicketComments, Appointment], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
     UsersModule,
@@ -56,7 +59,8 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
     RolesModule,
     SuperUsersModule,
     OrdersModule,
-    SupportTicketsModule
+    SupportTicketsModule,
+    AppointmentsModule
   ],
 })
 export class AppModule {}
