@@ -5,6 +5,7 @@ import { Appointment } from './appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { User } from 'src/auth/user.entity';
+import { Patientform } from 'src/patientforms/patientforms.entity';
 
 @Injectable()
 export class AppointmentsService {
@@ -14,6 +15,10 @@ export class AppointmentsService {
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+
+    @InjectRepository(Patientform)
+    private readonly patientFormRepo: Repository<Patientform>,
 
   ) {}
 
@@ -69,12 +74,16 @@ export class AppointmentsService {
       };
   }
 
-  async findOne(id: number): Promise<Appointment> {
-    const appointment = await this.appointmentRepo.findOne({ where: { id } });
-    if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
-    
-    return appointment;
-  }
+async findOne(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+
+  const patientForm = await this.patientFormRepo.findOne({
+    where: { doctor_id: Number(appointment.doctor_id) },
+  });
+
+  return { ...appointment, patientForm };
+}
 
   async update(id: number, dto: UpdateAppointmentDto): Promise<any> {
     const appointment = await this.findOne(id);

@@ -20,6 +20,9 @@ export class Appointment{
 
   @Column()
   doctor_id: string;
+  
+  @Column()
+  fields_data: string;
 
   @Column()
   doctor_name: string;

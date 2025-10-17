@@ -27,6 +27,10 @@ export class CreateAppointmentDto {
 
   @IsString()
   @IsOptional()
+  fields_data: string;
+
+  @IsString()
+  @IsOptional()
   doctor_email: string;
 
   @IsString()

@@ -15,6 +15,28 @@ import * as bcrypt from 'bcrypt';
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+@Post('/save-form/:id')
+async updateFiledData(
+  @Param('id') id: number,
+  @Body() dto: UpdateAppointmentDto,
+) {
+  const data = await this.appointmentsService.update(id, dto);
+  return {
+    success: true,
+    message: 'Appointment updated successfully',
+    data,
+  };
+}
+
+@Get('/get/:id')
+async findOneData(@Param('id') id: number) {
+  const data = await this.appointmentsService.findOne(id);
+  return {
+    success: true,
+    data,
+  };
+}
+
   @UseGuards(AuthGuard('jwt'))
 @Post()
 async create(
