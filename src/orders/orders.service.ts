@@ -53,14 +53,19 @@ export class OrdersService {
     return this.orderRepo.find();
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string) {
+  async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
       const query = this.orderRepo.createQueryBuilder('order');
 
       if (searchTitle) {
         query.where(
-          'order.name LIKE :search',
+          'order.invoice_no LIKE :search OR order.user_name LIKE :search OR order.user_email LIKE :search',
           { search: `%${searchTitle}%` },
         );
+      }
+
+      // If doctorId > 0, add filter
+      if (doctorId && doctorId > 0) {
+        query.andWhere('order.user_id = :doctorId', { doctorId });
       }
 
       const [data, total] = await query

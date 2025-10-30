@@ -38,6 +38,7 @@ async create(
   dto.templates = plan.templates;
   dto.ai_assisted = plan.ai_assisted;
   dto.medical_dictation = plan.medical_dictation;
+  dto.plan = plan.name;
 
  const now = new Date();
 
@@ -74,11 +75,13 @@ async getAll() {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('keywords') searchTitle?: string,
+    @Body('doctor_id') doctorId?: number,
   ) {
     return this.ordersService.paginate(
       Number(page),
       Number(limit),
       searchTitle,
+      Number(doctorId),
     );
   }
 

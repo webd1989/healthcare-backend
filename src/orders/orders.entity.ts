@@ -11,6 +11,9 @@ export class Orders {
 
   @Column()
   plan_id: number;
+  
+  @Column()
+  plan: string;
 
   @Column()
   user_id: number;

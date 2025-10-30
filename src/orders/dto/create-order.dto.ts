@@ -18,6 +18,10 @@ export class CreateOrderDto {
 
   @IsString()
   @IsOptional()
+  plan: string;
+
+  @IsString()
+  @IsOptional()
   user_name: string;
 
   @IsString()
