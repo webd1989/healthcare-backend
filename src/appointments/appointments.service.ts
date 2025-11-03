@@ -45,6 +45,21 @@ export class AppointmentsService {
     return this.appointmentRepo.find();
   }
 
+  async findAPTAll(doctorId?: number): Promise<Appointment[]> {
+    const query = this.appointmentRepo.createQueryBuilder('appointment');
+
+    // If doctorId > 0, add filter
+    if (doctorId && doctorId > 0) {
+      query.andWhere('appointment.doctor_id = :doctorId', { doctorId });
+    }
+
+    // Optional: order by date/time
+    query.orderBy('appointment.appointment_time', 'ASC');
+
+    // Execute and return results
+    return await query.getMany();
+  }
+
   async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
       const query = this.appointmentRepo.createQueryBuilder('appointment');
 

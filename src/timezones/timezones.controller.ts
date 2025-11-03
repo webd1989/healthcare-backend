@@ -12,7 +12,7 @@ import { extname } from 'path';
 export class TimezonesController {
   constructor(private readonly timezonesService: TimezonesService) {}
 
-@UseGuards(AuthGuard('jwt'))
+//@UseGuards(AuthGuard('jwt'))
 @Get('list')
 async getAll() {
   const data = await this.timezonesService.findAll();

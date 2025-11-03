@@ -96,6 +96,15 @@ async getAll() {
   return { records: data, success:true };
 }
 
+@UseGuards(AuthGuard('jwt'))
+@Post('get-list')
+async getAPTAll(
+  @Body('doctor_id') doctorId?: number,
+) {
+  const data = await this.appointmentsService.findAPTAll(Number(doctorId),);
+  return { records: data, success:true };
+}
+
   @UseGuards(AuthGuard('jwt'))
   @Post('/list')
   async findAll(

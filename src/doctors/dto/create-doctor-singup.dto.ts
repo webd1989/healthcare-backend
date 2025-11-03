@@ -31,6 +31,31 @@ export class CreateDoctorDtoSignup {
   //@Column({ unique: true })
   email: string;
 
+  @IsString()
+  @IsNotEmpty()
+  //@Column({ unique: true })
+  profession: string;
+
+  @IsString()
+  @IsNotEmpty()
+  //@Column({ unique: true })
+  specialty: string;
+
+  @IsString()
+  @IsNotEmpty()
+  //@Column({ unique: true })
+  country: string;
+
+  @IsString()
+  @IsNotEmpty()
+  //@Column({ unique: true })
+  timezone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  //@Column({ unique: true })
+  emr_use : string;
+  
   @IsOptional()
   @IsNumber()
   status: number;

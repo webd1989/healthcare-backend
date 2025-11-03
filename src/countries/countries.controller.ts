@@ -12,10 +12,8 @@ import { extname } from 'path';
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
 
-  @UseGuards(AuthGuard('jwt'))
 
-
-@UseGuards(AuthGuard('jwt'))
+//@UseGuards(AuthGuard('jwt'))
 @Get('list')
 async getAll() {
   const data = await this.countriesService.findAll();
