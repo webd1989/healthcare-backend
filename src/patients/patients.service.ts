@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { Patients } from './patients.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 
@@ -9,24 +9,24 @@ import { UpdatePatientDto } from './dto/update-patient.dto';
 @Injectable()
 export class PatientsService {
   constructor(
-    @InjectRepository(User)
-    private patientRepo: Repository<User>,
+    @InjectRepository(Patients)
+    private patientRepo: Repository<Patients>,
   ) {}
 
   async create(dto: CreatePatientDto): Promise<any> {
     const patient = this.patientRepo.create(dto);
     const saved = await this.patientRepo.save(patient);
 
-    // Step 2️⃣: Generate user_code (e.g., DTR-0001)
-    const userCode = saved.name
-      .toLowerCase()                // lowercase
-      .trim()                       // remove spaces at ends
-      .replace(/\s+/g, '-')         // replace spaces with hyphens
-      .replace(/[^a-z0-9-]/g, '') + // remove invalid characters
-    `-${saved.mobile}`;
+    // // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    // const userCode = saved.name
+    //   .toLowerCase()                // lowercase
+    //   .trim()                       // remove spaces at ends
+    //   .replace(/\s+/g, '-')         // replace spaces with hyphens
+    //   .replace(/[^a-z0-9-]/g, '') + // remove invalid characters
+    // `-${saved.mobile}`;
 
-    // Step 3️⃣: Update the same row
-    await this.patientRepo.update(saved.id, { user_code: userCode });
+    // // Step 3️⃣: Update the same row
+    // await this.patientRepo.update(saved.id, { user_code: userCode });
 
      return {
       success: true,
@@ -35,21 +35,19 @@ export class PatientsService {
     };
   }
 
-  async findAll(hospital_id: number): Promise<User[]> {
+  async findAll(hospital_id: number): Promise<Patients[]> {
     return this.patientRepo.find({
       where: {
         hospital_id: hospital_id,
-        type: 'Patient',
       },
     });
   }
 
- async getAllPatients(doctor_id: number, user_mobile: string): Promise<User[]> {
+ async getAllPatients(doctor_id: number, user_mobile: string): Promise<Patients[]> {
     return this.patientRepo.find({
       where: {
         doctor_id: doctor_id,
         mobile: user_mobile,
-        type: 'Patient',
       },
     });
   }
@@ -63,7 +61,7 @@ export class PatientsService {
     const query = this.patientRepo.createQueryBuilder('patient');
 
     // Always filter by type = 'Patient'
-    query.where('patient.type = :type', { type: 'Patient' });
+    //query.where('patient.type = :type', { type: 'Patient' });
 
     // If doctorId > 0, add filter
     if (doctorId && doctorId > 0) {
@@ -73,7 +71,7 @@ export class PatientsService {
     // If searchTitle provided, search by name or email
     if (searchTitle && searchTitle.trim() !== '') {
       query.andWhere(
-        '(patient.name LIKE :search OR patient.email LIKE :search)',
+        '(patient.first_name LIKE :search OR patient.last_name LIKE :search OR  patient.mobile LIKE :search)',
         { search: `%${searchTitle}%` },
       );
     }
@@ -92,7 +90,7 @@ export class PatientsService {
     };
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: number): Promise<Patients> {
     const patient = await this.patientRepo.findOne({ where: { id } });
     if (!patient) throw new NotFoundException(`Patient ${id} not found`);
     return patient;

@@ -8,6 +8,7 @@ import { Hospital } from './hospitals/hospital.entity';
 import { DoctorsModule } from './doctors/doctors.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { PatientsModule } from './patients/patients.module';
+import { Patients } from './patients/patients.entity';
 import { MedicinesModule } from './medicines/medicines.module';
 import { Medicines } from './medicines/medicines.entity';
 import { CountriesModule } from './countries/countries.module';
@@ -42,7 +43,10 @@ import { AppointmentsModule } from './appointments/appointments.module';
       username: 'root',    // your mysql user
       password: '', // your mysql password
       database: 'heathcare_db',
-      entities: [User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, Orders, SupportTickets, SupportTicketComments, Appointment], // Entities you want to use
+      entities: [
+        User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, 
+        Orders, SupportTickets, SupportTicketComments, Appointment, Patients
+      ], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
     UsersModule,

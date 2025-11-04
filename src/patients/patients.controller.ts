@@ -20,10 +20,6 @@ async create(
   @Body() dto: CreatePatientDto,
 ) {  
   dto.status = 1;
-  dto.type = 'Patient';
-  const hashed = await bcrypt.hash('12345', 10);
-  dto.password = hashed;
-
   const patient = await this.patientsService.create(dto);
 
   return {

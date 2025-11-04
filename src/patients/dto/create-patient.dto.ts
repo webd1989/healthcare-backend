@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
 
 export class CreatePatientDto {
 
@@ -9,22 +9,22 @@ export class CreatePatientDto {
   @IsNumber()
   @IsNotEmpty()
   doctor_id: number;
-
+  
+  @IsNumber()
   @IsOptional()
-  @IsString()
-  type: string;
+  patient_id: string;
+
+  @IsNumber()
+  @IsOptional()
+  visit_id: string;
 
   @IsString()
   @IsNotEmpty()
-  name: string;
-
-  @IsOptional()
-  @IsString()
-  password: string;
+  first_name: string;
 
   @IsString()
   @IsNotEmpty()
-  email: string;
+  last_name: string;
 
   @IsString()
   @IsNotEmpty()
@@ -32,7 +32,27 @@ export class CreatePatientDto {
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  gender: string;
+
+  @IsString()
+  @IsNotEmpty()
+  age: string;
+
+  @IsBoolean()
+  @IsOptional()
+  recently_travelled: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  consent: boolean;
+
+  @IsString()
+  @IsOptional()
+  country: string;
+
+  @IsString()
+  @IsOptional()
+  language: string;
 
   @IsOptional()
   @IsNumber()
