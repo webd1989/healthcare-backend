@@ -43,7 +43,7 @@ async create(
   @Body() dto: CreateAppointmentDto,
 ) {
 
-    let user:any = await this.appointmentsService.getUserById(dto.user_id);
+    let user:any = await this.appointmentsService.getPatientById(dto.user_id);
     const doctor = await this.appointmentsService.getUserById(dto.doctor_id);
   
     if (!doctor) {
@@ -51,29 +51,20 @@ async create(
     }
   
     if (!user) {
-      // Step 2️⃣: Generate user_code (e.g., DTR-0001)
-      const userCode = dto.user_name
-        .toLowerCase()                // lowercase
-        .trim()                       // remove spaces at ends
-        .replace(/\s+/g, '-')         // replace spaces with hyphens
-        .replace(/[^a-z0-9-]/g, '') + // remove invalid characters
-      `-${dto.user_mobile}`;
 
       const hashed = await bcrypt.hash('12345', 10);
 
       user = await this.appointmentsService.createPatient({
-        name: dto.user_name,
+        first_name: dto.user_first_name,
+        last_name: dto.user_last_name,
         mobile: dto.user_mobile,
         doctor_id: Number(dto.doctor_id),
-        user_code: userCode,
         hospital_id: doctor.hospital_id,
         status: 1,
-        type: 'Patient',
-        password: hashed,
       });
     }
   
-    dto.user_name = user.name;
+    dto.user_name = user.first_name+' '+user.last_name;
     dto.user_email = user.email;
 
     dto.doctor_name = doctor.name;

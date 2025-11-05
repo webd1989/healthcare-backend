@@ -4,10 +4,11 @@ import { AppointmentsService } from './appointments.service';
 import { AppointmentsController } from './appointments.controller';
 import { Appointment } from './appointment.entity';
 import { User } from 'src/auth/user.entity';
+import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Appointment, User, Patientform])],
+  imports: [TypeOrmModule.forFeature([Appointment, User, Patientform, Patients])],
   providers: [AppointmentsService],
   controllers: [AppointmentsController],
 })

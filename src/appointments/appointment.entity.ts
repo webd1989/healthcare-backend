@@ -13,6 +13,12 @@ export class Appointment{
   user_name: string;
 
   @Column()
+  user_first_name: string;
+
+  @Column()
+  user_last_name: string;
+
+  @Column()
   user_email: string;
   
   @Column()

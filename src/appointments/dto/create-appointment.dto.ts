@@ -11,7 +11,16 @@ export class CreateAppointmentDto {
 
   @IsString()
   @IsNotEmpty()
+  user_first_name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  user_last_name: string;
+
+  @IsString()
+  @IsNotEmpty()
   user_name: string;
+  
 
   @IsString()
   @IsOptional()

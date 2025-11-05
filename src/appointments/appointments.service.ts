@@ -5,6 +5,7 @@ import { Appointment } from './appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { User } from 'src/auth/user.entity';
+import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
 
 @Injectable()
@@ -15,6 +16,9 @@ export class AppointmentsService {
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    
+    @InjectRepository(Patients)
+    private readonly patientsRepo: Repository<Patients>,
 
 
     @InjectRepository(Patientform)
@@ -32,13 +36,17 @@ export class AppointmentsService {
     };
   }
 
- async createPatient(data: Partial<User>): Promise<User> {
-  const newPatient = this.userRepo.create(data); 
-  return await this.userRepo.save(newPatient);
+ async createPatient(data: Partial<Patients>): Promise<Patients> {
+  const newPatient = this.patientsRepo.create(data); 
+  return await this.patientsRepo.save(newPatient);
 }
 
    async getUserById(user_id: any): Promise<User | null> {
       return this.userRepo.findOne({ where: { id: user_id } });
+    }
+    
+    async getPatientById(user_id: any): Promise<Patients | null> {
+      return this.patientsRepo.findOne({ where: { id: user_id } });
     }
 
   async findAll(): Promise<Appointment[]> {
