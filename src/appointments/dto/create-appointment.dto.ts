@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsDateString, IsBoolean } from 'class-validator';
 
 export class CreateAppointmentDto {
   @IsString()
@@ -37,6 +37,31 @@ export class CreateAppointmentDto {
   @IsString()
   @IsOptional()
   fields_data: string;
+  
+  @IsString()
+  @IsOptional()
+  user_age: string;
+
+
+  @IsString()
+  @IsOptional()
+  user_country: string;
+
+  @IsString()
+  @IsOptional()
+  user_language: string;
+
+  @IsBoolean()
+  @IsOptional()
+  recently_travelled: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  consent: boolean;
+  
+  @IsString()
+  @IsOptional()
+  user_gender: string;
 
   @IsString()
   @IsOptional()
