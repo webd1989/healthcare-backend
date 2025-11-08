@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Patients } from './patients.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 
 @Injectable()
@@ -11,10 +13,51 @@ export class PatientsService {
   constructor(
     @InjectRepository(Patients)
     private patientRepo: Repository<Patients>,
+
+    private readonly configService: ConfigService
   ) {}
 
   async create(dto: CreatePatientDto): Promise<any> {
+
+     try {
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      
+      const externalResponse = await axios.post(baseUrl+'patients/',
+        {
+          first_name: dto.first_name,
+          last_name: dto.last_name,
+          mobile: dto.mobile,
+          age: dto.age,
+          gender: dto.gender,
+          recently_travelled: dto.recently_travelled ?? false,
+          consent: dto.consent ?? true,
+          country: dto.country ?? 'US',
+          language: dto.language ?? 'en',
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const externalData = externalResponse.data?.data;
+
+      dto.patient_id = externalData?.patient_id;
+      dto.visit_id = externalData?.visit_id;
+
+     // console.log(dto);
+      
+     // console.log('External API Response:', externalResponse.data);
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+    }
+
+  
     const patient = this.patientRepo.create(dto);
+
     const saved = await this.patientRepo.save(patient);
 
     // // Step 2️⃣: Generate user_code (e.g., DTR-0001)

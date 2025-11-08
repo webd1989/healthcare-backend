@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/user.entity';
 import { UsersModule } from './users/users.module';
@@ -48,6 +49,9 @@ import { AppointmentsModule } from './appointments/appointments.module';
         Orders, SupportTickets, SupportTicketComments, Appointment, Patients
       ], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true, // ✅ makes env vars available everywhere
     }),
     UsersModule,
     AuthModule,
