@@ -7,6 +7,8 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { User } from 'src/auth/user.entity';
 import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @Injectable()
 export class AppointmentsService {
@@ -24,6 +26,8 @@ export class AppointmentsService {
     @InjectRepository(Patientform)
     private readonly patientFormRepo: Repository<Patientform>,
 
+    private readonly configService: ConfigService
+
   ) {}
 
   async create(dto: CreateAppointmentDto): Promise<any> {
@@ -37,6 +41,43 @@ export class AppointmentsService {
   }
 
  async createPatient(data: Partial<Patients>): Promise<Patients> {
+
+   try {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        
+        const externalResponse = await axios.post(baseUrl+'patients/',
+          {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            mobile: data.mobile,
+            age: data.age,
+            gender: data.gender,
+            recently_travelled: data.recently_travelled ?? false,
+            consent: data.consent ?? true,
+            country: data.country ?? 'US',
+            language: data.language ?? 'en',
+          },
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+  
+        const externalData = externalResponse.data?.data;
+  
+        data.patient_id = externalData?.patient_id;
+        data.visit_id = externalData?.visit_id;
+  
+       // console.log(dto);
+        
+       // console.log('External API Response:', externalResponse.data);
+      } catch (error) {
+        console.error('❌ External API call failed:', error.response?.data || error.message);
+        // Optionally: return error or continue even if external call fails
+      }
+
   const newPatient = this.patientsRepo.create(data); 
   return await this.patientsRepo.save(newPatient);
 }
