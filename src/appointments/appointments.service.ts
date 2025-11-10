@@ -69,6 +69,7 @@ export class AppointmentsService {
   
         data.patient_id = externalData?.patient_id;
         data.visit_id = externalData?.visit_id;
+        data.first_question = externalData?.first_question;
   
        // console.log(dto);
         
@@ -145,8 +146,12 @@ async findOne(id: number): Promise<any> {
   const patientForm = await this.patientFormRepo.findOne({
     where: { doctor_id: Number(appointment.doctor_id) },
   });
+  
+  const patient = await this.patientsRepo.findOne({
+    where: { id: Number(appointment.user_id) },
+  });
 
-  return { ...appointment, patientForm };
+  return { ...appointment, patientForm, patient };
 }
 
   async update(id: number, dto: UpdateAppointmentDto): Promise<any> {

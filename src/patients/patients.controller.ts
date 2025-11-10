@@ -30,6 +30,21 @@ async create(
 }
 
 @UseGuards(AuthGuard('jwt'))
+@Post("consultations-answer/:id")
+async consultationsAnswer(
+  @Param('id') id: string,
+  @Body() body: any,
+) {  
+  const data = await this.patientsService.consultationsAnswer(body);
+
+  return {
+    success: data.success,
+    message: data.message,
+    data: data,
+  };
+}
+
+@UseGuards(AuthGuard('jwt'))
 @Post('get-hospital-list')
 async getAll(@Body('hospital_id') hospital_id: number) {
   const data = await this.patientsService.findAll(hospital_id);

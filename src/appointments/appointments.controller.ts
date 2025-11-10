@@ -70,6 +70,7 @@ async create(
       });
     }
   
+    dto.user_id = user.id;
     dto.user_name = user.first_name+' '+user.last_name;
     dto.user_email = user.email;
 

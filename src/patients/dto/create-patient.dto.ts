@@ -57,5 +57,9 @@ export class CreatePatientDto {
   @IsOptional()
   @IsNumber()
   status: number;
+  
+  @IsOptional()
+  @IsString()
+  first_question: string;
 
 }

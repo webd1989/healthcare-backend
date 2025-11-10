@@ -33,6 +33,9 @@ export class Patients {
 
   @Column({ nullable: true })
   age: string;
+  
+  @Column({ nullable: true })
+  first_question: string;
 
   @Column({ type: 'boolean', nullable: true, default: false })
   recently_travelled: boolean;
