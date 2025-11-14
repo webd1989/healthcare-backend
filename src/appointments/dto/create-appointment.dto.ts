@@ -20,7 +20,14 @@ export class CreateAppointmentDto {
   @IsString()
   @IsNotEmpty()
   user_name: string;
-  
+
+  @IsNumber()
+  @IsOptional()
+  patient_id: string;
+
+  @IsNumber()
+  @IsOptional()
+  visit_id: string;  
 
   @IsString()
   @IsOptional()
@@ -41,7 +48,6 @@ export class CreateAppointmentDto {
   @IsString()
   @IsOptional()
   user_age: string;
-
 
   @IsString()
   @IsOptional()

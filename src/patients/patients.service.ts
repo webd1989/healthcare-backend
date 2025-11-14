@@ -23,6 +23,7 @@ export class PatientsService {
 
      try {
       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
       
       const externalResponse = await axios.post(baseUrl+'patients/',
         {
@@ -40,6 +41,8 @@ export class PatientsService {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+
           },
         },
       );
@@ -86,6 +89,7 @@ export class PatientsService {
 
      try {
       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
        // Use qs to encode form data like curl -d does
         const formBody = qs.stringify({
           form_patient_id: formData.form_patient_id,
@@ -100,6 +104,7 @@ export class PatientsService {
             headers: {
               Accept: 'application/json',
               'Content-Type': 'application/x-www-form-urlencoded',
+              'X-API-Key': ClinicAIID,
             },
           },
         );

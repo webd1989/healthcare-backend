@@ -9,6 +9,8 @@ import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { log } from 'console';
+import * as qs from 'qs';
 
 @Injectable()
 export class AppointmentsService {
@@ -31,8 +33,47 @@ export class AppointmentsService {
   ) {}
 
   async create(dto: CreateAppointmentDto): Promise<any> {
+
+    try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      const externalResponse = await axios.post(baseUrl+'patients/',
+        {
+          first_name: dto.user_first_name,
+          last_name: dto.user_last_name,
+          mobile: dto.user_mobile,
+          age: dto.user_age,
+          gender: dto.user_gender,
+          recently_travelled: dto.recently_travelled ?? false,
+          consent: dto.consent ?? true,
+          country: 'US',
+          language: 'en',
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+          },
+        },
+      );
+
+      const externalData = externalResponse.data?.data;
+
+      dto.patient_id = externalData?.patient_id;
+      dto.visit_id = externalData?.visit_id;
+  
+      // console.log(dto);
+      
+      // console.log('External API Response:', externalResponse.data);
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+    }
+
     const appointment = this.appointmentRepo.create(dto);
     const saved = await this.appointmentRepo.save(appointment);
+    
      return {
       success: true,
       message: 'Appointment created successfully',
@@ -44,6 +85,7 @@ export class AppointmentsService {
 
    try {
         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
         
         const externalResponse = await axios.post(baseUrl+'patients/',
           {
@@ -61,6 +103,7 @@ export class AppointmentsService {
             headers: {
               Accept: 'application/json',
               'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
             },
           },
         );
@@ -79,7 +122,7 @@ export class AppointmentsService {
         // Optionally: return error or continue even if external call fails
       }
 
-  const newPatient = this.patientsRepo.create(data); 
+    const newPatient = this.patientsRepo.create(data); 
   return await this.patientsRepo.save(newPatient);
 }
 

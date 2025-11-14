@@ -12,6 +12,12 @@ export class Appointment{
   @Column()
   user_name: string;
 
+  @Column({ nullable: true })
+  patient_id: string;
+
+  @Column({ nullable: true })
+  visit_id: string;
+
   @Column()
   user_first_name: string;
 
