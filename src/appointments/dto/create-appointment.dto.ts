@@ -81,5 +81,9 @@ export class CreateAppointmentDto {
   @IsNotEmpty()
   appointment_time: string
   
+  @IsString()
+  @IsOptional()
+  question_answers: string
+  
 
 }

@@ -28,7 +28,6 @@ async create(
     data: patient,
   };
 }
-
 @UseGuards(AuthGuard('jwt'))
 @Post("consultations-answer/:id")
 async consultationsAnswer(
@@ -37,6 +36,19 @@ async consultationsAnswer(
 ) {  
   const data = await this.patientsService.consultationsAnswer(body);
 
+  return {
+    success: data.success,
+    message: data.message,
+    data: data,
+  };
+}
+@UseGuards(AuthGuard('jwt'))
+@Post("consultations-answer-edit/:id")
+async consultationsAnswerEdit(
+  @Param('id') id: string,
+  @Body() body: any,
+) {  
+  const data = await this.patientsService.consultationsAnswerEdit(body);
   return {
     success: data.success,
     message: data.message,

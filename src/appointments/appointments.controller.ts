@@ -28,6 +28,19 @@ async updateFiledData(
   };
 }
 
+@UseGuards(AuthGuard('jwt'))
+@Post("appointment-save-questions/:id")
+async appointmentSaveQuestions(
+  @Param('id') id: number,
+  @Body() body: any,
+) {  
+  const data = await this.appointmentsService.update(id, body);
+  return {
+    success: true,
+    message: "Data save successfully",
+  };
+}
+
 @Get('/get/:id')
 async findOneData(@Param('id') id: number) {
   const data = await this.appointmentsService.findOne(id);

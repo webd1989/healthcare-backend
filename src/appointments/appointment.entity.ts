@@ -42,6 +42,9 @@ export class Appointment{
   @Column()
   doctor_email: string;
 
+  @Column({ type: "longtext" })
+  question_answers: string;
+
   @Column({ type: 'date' })
   appointment_date: string; 
 

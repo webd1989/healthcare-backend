@@ -127,10 +127,53 @@ export class PatientsService {
       success: false,
       message: error.response?.data || error.message,
     };
-    }
-
-     
+    } 
   }
+
+  async consultationsAnswerEdit(formData:any): Promise<any> {
+
+     try {
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+       // Use qs to encode form data like curl -d does
+       const externalResponse = await axios.patch(
+        `${baseUrl}patients/consultations/answer`,
+        {
+          patient_id: formData.form_patient_id,
+          visit_id: formData.form_visit_id,
+          question_number: formData.question_number,
+          new_answer: formData.form_answer,
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+          },
+        }
+      );
+
+       const externalData = externalResponse.data;       
+      
+      return {
+        success: true,
+        message: 'Answer updated successfully',
+        data: externalData,
+      };
+
+     // console.log(dto);
+      
+     // console.log('External API Response:', externalResponse.data);
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+      return {
+      success: false,
+      message: error.response?.data || error.message,
+    };
+    } 
+  }
+
   async findAll(hospital_id: number): Promise<Patients[]> {
     return this.patientRepo.find({
       where: {
