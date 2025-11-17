@@ -6,6 +6,10 @@ export class CreateAppointmentDto {
   user_id: string;
 
   @IsString()
+  @IsOptional()
+  appointment_no: string;
+  
+  @IsString()
   @IsNotEmpty()
   user_mobile: string;
 
@@ -85,5 +89,8 @@ export class CreateAppointmentDto {
   @IsOptional()
   question_answers: string
   
+  @IsString()
+  @IsOptional()
+  previsit_created: string
 
 }

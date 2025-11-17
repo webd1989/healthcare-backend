@@ -73,6 +73,12 @@ export class AppointmentsService {
 
     const appointment = this.appointmentRepo.create(dto);
     const saved = await this.appointmentRepo.save(appointment);
+
+      // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+      const appointment_no = `APPT-${String(saved.id).padStart(6, '0')}`;
+
+      // Step 3️⃣: Update the same row
+      await this.appointmentRepo.update(saved.id, { appointment_no: appointment_no });
     
      return {
       success: true,
@@ -123,7 +129,8 @@ export class AppointmentsService {
       }
 
     const newPatient = this.patientsRepo.create(data); 
-  return await this.patientsRepo.save(newPatient);
+    return await this.patientsRepo.save(newPatient);
+    
 }
 
    async getUserById(user_id: any): Promise<User | null> {
@@ -194,7 +201,60 @@ async findOne(id: number): Promise<any> {
     where: { id: Number(appointment.user_id) },
   });
 
-  return { ...appointment, patientForm, patient };
+
+  
+  if(appointment.visit_id !== "" && appointment.question_answers != '' && appointment.previsit_created == 'No'){
+
+    try {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        
+        const externalResponse = await axios.post(baseUrl+'patients/summary/previsit',
+          {
+            patient_id: appointment.patient_id,
+            visit_id: appointment.visit_id
+          },
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
+            },
+          },
+        );
+      } catch (error) {
+        console.error('❌ External API call failed:', error.response?.data || error.message);
+        // Optionally: return error or continue even if external call fails
+      }
+
+    await this.appointmentRepo.update(appointment.id, { previsit_created: "Yes" });
+
+  }
+
+let summaryData = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+
+    summaryData = externalResponse.data;
+    
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { ...appointment, patientForm, patient, summaryData };
 }
 
   async update(id: number, dto: UpdateAppointmentDto): Promise<any> {

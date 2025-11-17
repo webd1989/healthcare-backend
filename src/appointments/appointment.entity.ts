@@ -6,10 +6,13 @@ export class Appointment{
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({nullable: true, default:0})
   user_id: string;
 
-  @Column()
+  @Column({nullable: true})
+  appointment_no: string;
+
+  @Column({nullable: true})
   user_name: string;
 
   @Column({ nullable: true })
@@ -18,40 +21,43 @@ export class Appointment{
   @Column({ nullable: true })
   visit_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   user_first_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   user_last_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   user_email: string;
   
-  @Column()
+  @Column({ nullable: true })
   user_mobile: string;
 
-  @Column()
+  @Column({ nullable: true })
   doctor_id: string;
   
-  @Column()
+  @Column({ nullable: true })
   fields_data: string;
 
-  @Column()
+  @Column({ nullable: true })
   doctor_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   doctor_email: string;
 
-  @Column({ type: "longtext" })
+  @Column({nullable: true, type: "longtext" })
   question_answers: string;
 
-  @Column({ type: 'date' })
+  @Column({ nullable: true,type: 'date' })
   appointment_date: string; 
 
-  @Column({ type: 'time' })
+  @Column({ nullable: true, type: 'time' })
   appointment_time: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({ nullable: true, default:'No' })
+  previsit_created: string;
+
+  @CreateDateColumn({ nullable: true,type: 'timestamp' })
   created_at: Date;
 
 }
