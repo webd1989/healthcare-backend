@@ -212,4 +212,19 @@ remove(@Param('id') id: number) {
 }
 
 
+@UseGuards(AuthGuard('jwt'))
+@Post('upload-transcribe/:id')
+@UseInterceptors(FileInterceptor('file'))
+async saveTranscribe(
+  @Param('id') id: number,
+  @UploadedFile() file: Express.Multer.File,   // expect only file field
+) {  
+  const data = await this.appointmentsService.saveTranscribe(id, file );
+  return {
+    success: true,
+    message: 'Appointment transcribe saved successfully',
+    data,
+  };
+}
+
 }

@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { log } from 'console';
 import * as qs from 'qs';
+import FormData from 'form-data';
 
 @Injectable()
 export class AppointmentsService {
@@ -334,6 +335,43 @@ async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
     }
 
     return false;
+}
+
+
+async saveTranscribe(id: number, file: Express.Multer.File): Promise<any> {
+  const appointment = await this.findOne(id);
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+
+    const apiUrl = `${baseUrl}notes/transcribe`;
+
+    const formData = new FormData();
+    formData.append('patient_id', appointment.patient_id);
+    formData.append('visit_id', appointment.visit_id);
+    formData.append('language', 'en');
+    formData.append('audio_file', file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
+
+    const externalResponse = await axios.post(apiUrl, formData, {
+      headers: {
+        ...formData.getHeaders(), // important for multipart/form-data boundary
+        'X-API-Key': ClinicAIID,
+        'Accept':'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('Transcribe API response:', externalResponse.data);
+
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+  }
+
+  return false;
 }
 
   async remove(id: number): Promise<any> {
