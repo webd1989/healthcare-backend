@@ -91,6 +91,10 @@ export class CreateAppointmentDto {
   
   @IsString()
   @IsOptional()
+  appointment_vitals: string
+  
+  @IsString()
+  @IsOptional()
   previsit_created: string
 
 }

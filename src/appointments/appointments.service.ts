@@ -188,6 +188,34 @@ export class AppointmentsService {
         limit,
       };
   }
+  
+  async findVitals(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+   let vitals = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/vitals',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    vitals = externalResponse.data; 
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { vitals };
+}
+
 
 async findOne(id: number): Promise<any> {
   const appointment = await this.appointmentRepo.findOne({ where: { id } });
@@ -231,7 +259,7 @@ async findOne(id: number): Promise<any> {
 
   }
 
-let summaryData = [];
+ let summaryData = [];
 
   try {
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
@@ -246,9 +274,7 @@ let summaryData = [];
         },
       },
     );
-
-    summaryData = externalResponse.data;
-    
+    summaryData = externalResponse.data;    
   } catch (error) {
     console.error('❌ External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
@@ -262,6 +288,53 @@ let summaryData = [];
     Object.assign(appointment, dto);
     return this.appointmentRepo.save(appointment);
   }
+
+async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
+    const appointment = await this.findOne(id);
+    Object.assign(appointment, dto);
+
+    try {
+  const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+  const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+
+    // Build full API URL EXACTLY like your curl command
+    const apiUrl = `${baseUrl}patients/${appointment.patient_id}/visits/${appointment.visit_id}/vitals`;
+
+      const vitals = dto.appointment_vitals
+      ? JSON.parse(dto.appointment_vitals)
+      : {};
+      const externalResponse = await axios.post(
+        apiUrl,
+        {
+          bloodPressure: vitals.bloodPressure,
+          heartRate: vitals.heartRate,
+          temperature: vitals.temperature,
+          respiratoryRate: vitals.respiratoryRate,
+          oxygenSaturation: vitals.oxygenSaturation,
+          weight: vitals.weight,
+          height: vitals.height,
+          bmi: vitals.bmi,
+          notes: vitals.notes,
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID, // REQUIRED
+          },
+        }
+      );
+
+      console.log('Vitals Saved ✔️', externalResponse.data);
+
+      return this.appointmentRepo.save(appointment);
+
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+    }
+
+    return false;
+}
 
   async remove(id: number): Promise<any> {
     const appointment = await this.findOne(id);

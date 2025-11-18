@@ -141,6 +141,16 @@ async getAPTAll(
       data,
     };
   }
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('vitals/:id')
+  async findVitals(@Param('id') id: number) {
+    const data = await this.appointmentsService.findVitals(id);
+    return {
+      success: true,
+      data,
+    };
+  }
 
 @UseGuards(AuthGuard('jwt'))
 @Post(':id')
@@ -180,11 +190,26 @@ async updateStatus(
     data,
   };
 }
-  @UseGuards(AuthGuard('jwt'))
-  @Delete(':id')
-  remove(@Param('id') id: number) {
+
+@UseGuards(AuthGuard('jwt'))
+@Post('vitals/:id')
+async updateVitals(
+  @Param('id') id: number,
+  @Body('vitals') appointment_vitals: string,   // expect only status field
+) {
+  const data = await this.appointmentsService.updateVitals(id, { appointment_vitals, previsit_created:"No" } as UpdateAppointmentDto);
+  return {
+    success: true,
+    message: 'Appointment vitals saved successfully',
+    data,
+  };
+}
+
+@UseGuards(AuthGuard('jwt'))
+@Delete(':id')
+remove(@Param('id') id: number) {
     return this.appointmentsService.remove(id);
-  }
+}
 
 
 }

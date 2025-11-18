@@ -47,6 +47,9 @@ export class Appointment{
 
   @Column({nullable: true, type: "longtext" })
   question_answers: string;
+  
+  @Column({nullable: true, type: "longtext" })
+  appointment_vitals: string;
 
   @Column({ nullable: true,type: 'date' })
   appointment_date: string; 
