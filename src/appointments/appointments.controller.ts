@@ -27,6 +27,18 @@ async updateFiledData(
     data,
   };
 }
+@UseGuards(AuthGuard('jwt'))
+@Post('dashboard')
+async getDashboardData(
+  @Query('doctor_id') doctorId?: string,
+) {
+  const cleanDoctorId = Number(doctorId);
+  const data = await this.appointmentsService.getDashboardData(
+    cleanDoctorId
+  );
+
+  return { records: data, success: true };
+}
 
 @UseGuards(AuthGuard('jwt'))
 @Post("appointment-save-questions/:id")
@@ -226,5 +238,7 @@ async saveTranscribe(
     data,
   };
 }
+
+
 
 }

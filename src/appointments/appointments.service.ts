@@ -374,12 +374,32 @@ async saveTranscribe(id: number, file: Express.Multer.File): Promise<any> {
   return false;
 }
 
-  async remove(id: number): Promise<any> {
-    const appointment = await this.findOne(id);
-    await this.appointmentRepo.remove(appointment);
-     return {
-      success: true,
-      message: 'Appointment deleted successfully',
-    };
+async remove(id: number): Promise<any> {
+  const appointment = await this.findOne(id);
+  await this.appointmentRepo.remove(appointment);
+    return {
+    success: true,
+    message: 'Appointment deleted successfully',
+  };
+}
+
+async getDashboardData(
+  doctorId?: number
+): Promise<Appointment[]> {
+
+  const query = this.appointmentRepo.createQueryBuilder('appointment');
+  // 👨‍⚕️ Doctor filter
+  if (doctorId && Number.isFinite(doctorId) && doctorId > 0) {
+    query.andWhere('appointment.doctor_id = :doctorId', { doctorId });
   }
+
+  // 📅 Today's date filter
+  // appointment_date column format: YYYY-MM-DD
+  const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  query.andWhere('appointment.appointment_date = :today', { today });
+
+  // Fetch records
+  return await query.getMany();
+}
+
 }
