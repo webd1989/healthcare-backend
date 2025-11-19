@@ -4,13 +4,16 @@ import { Repository } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
-
+import { Hospital } from '../hospitals/hospital.entity';
 
 @Injectable()
 export class StaffsService {
   constructor(
     @InjectRepository(User)
     private staffRepo: Repository<User>,
+    
+    @InjectRepository(Hospital)
+    private hospitalRepo: Repository<Hospital>,
   ) {}
 
   async create(dto: CreateStaffDto): Promise<any> {
@@ -47,7 +50,7 @@ export class StaffsService {
 
       if (searchTitle) {
         query.where(
-          'staff.name LIKE :search OR staff.email LIKE :search',
+          'staff.name LIKE :search OR staff.email LIKE :search OR staff.mobile LIKE :search OR staff.user_code LIKE :search',
           { search: `%${searchTitle}%` },
         );
       }
@@ -62,9 +65,36 @@ export class StaffsService {
         .take(limit)
         .getManyAndCount();
 
+        // Fetch hospital names for each doctor
+        const result = await Promise.all(
+          data.map(async (staff) => {
+            let hospitalName = 'N/A';
+            let doctorName = 'N/A';
+            if (staff.hospital_id && staff.hospital_id > 0) {
+                const hospital = await this.hospitalRepo.findOneBy({
+                  id: staff.hospital_id,
+                });
+                hospitalName = hospital ? hospital.name : 'N/A';
+              }
+
+              if (staff.doctor_id && staff.doctor_id > 0) {
+                const doctor = await this.staffRepo.findOneBy({
+                  id: staff.doctor_id,
+                });
+                doctorName = doctor ? doctor.name : 'N/A';
+              }
+
+            return {
+              ...staff,
+              hospital_name: hospitalName,
+              doctor_name: doctorName, // add hospital name
+            };
+          }),
+        );
+
       return {
         success: true,
-        data,
+        data: result,
         total,
         page,
         limit,

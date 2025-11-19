@@ -12,6 +12,10 @@ export class CreateMedicineDto {
   @IsOptional()
   @IsString()
   logo?: string;
+  
+  @IsOptional()
+  @IsString()
+  unique_code: string;
 
   @IsOptional()
   @IsNumber()

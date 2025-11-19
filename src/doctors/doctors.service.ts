@@ -5,13 +5,16 @@ import { User } from '../auth/user.entity';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { CreateDoctorDtoSignup } from './dto/create-doctor-singup.dto';
-
+import { Hospital } from '../hospitals/hospital.entity';
 
 @Injectable()
 export class DoctorsService {
   constructor(
     @InjectRepository(User)
     private doctorRepo: Repository<User>,
+
+    @InjectRepository(Hospital)
+    private hospitalRepo: Repository<Hospital>,
   ) {}
 
   async create(dto: CreateDoctorDto): Promise<any> {
@@ -41,32 +44,51 @@ export class DoctorsService {
     });
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string) {
-      const query = this.doctorRepo.createQueryBuilder('doctor');
+async paginate(page: number, limit: number, searchTitle?: string) {
+  const query = this.doctorRepo.createQueryBuilder('doctor');
 
-      // Always filter by type = Doctor
-      query.where('doctor.type = :type', { type: 'Doctor' });
+  // Always filter by type = Doctor
+  query.where('doctor.type = :type', { type: 'Doctor' });
 
-      if (searchTitle) {
-        query.where(
-          'doctor.name LIKE :search OR doctor.email LIKE :search',
-          { search: `%${searchTitle}%` },
-        );
+  if (searchTitle) {
+    query.andWhere(
+      'doctor.name LIKE :search OR doctor.email LIKE :search OR doctor.mobile LIKE :search OR doctor.user_code LIKE :search',
+      { search: `%${searchTitle}%` },
+    );
+  }
+
+  const [data, total] = await query
+    .skip((page - 1) * limit)
+    .take(limit)
+    .getManyAndCount();
+
+  // Fetch hospital names for each doctor
+  const result = await Promise.all(
+    data.map(async (doctor) => {
+      let hospitalName = '';
+      if (doctor.hospital_id) {
+        const hospital = await this.hospitalRepo.findOne({
+          where: { id: doctor.hospital_id },
+          select: ['name'],
+        });
+        hospitalName = hospital ? hospital.name : 'N/A';
       }
 
-      const [data, total] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
-
       return {
-        success: true,
-        data,
-        total,
-        page,
-        limit,
+        ...doctor,
+        hospital_name: hospitalName, // add hospital name
       };
-  }
+    }),
+  );
+
+  return {
+    success: true,
+    data: result,
+    total,
+    page,
+    limit,
+  };
+}
 
   async findOne(id: number): Promise<User> {
     const doctor = await this.doctorRepo.findOne({ where: { id } });

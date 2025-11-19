@@ -18,6 +18,9 @@ export class Medicines {
   @Column()
   status: number;
 
+  @Column({nullable: true})
+  unique_code: string;
+
   @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
     

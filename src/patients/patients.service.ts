@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { log } from 'console';
 import * as qs from 'qs';
+import { User } from '../auth/user.entity';
+import { Hospital } from '../hospitals/hospital.entity';
 
 
 @Injectable()
@@ -15,6 +17,12 @@ export class PatientsService {
   constructor(
     @InjectRepository(Patients)
     private patientRepo: Repository<Patients>,
+    
+    @InjectRepository(Hospital)
+    private hospitalRepo: Repository<Hospital>,
+    
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
 
     private readonly configService: ConfigService
   ) {}
@@ -220,9 +228,36 @@ export class PatientsService {
       .take(limit)
       .getManyAndCount();
 
+      // Fetch hospital names for each doctor
+      const result = await Promise.all(
+        data.map(async (staff) => {
+          let hospitalName = 'N/A';
+          let doctorName = 'N/A';
+          if (staff.hospital_id && staff.hospital_id > 0) {
+              const hospital = await this.hospitalRepo.findOneBy({
+                id: staff.hospital_id,
+              });
+              hospitalName = hospital ? hospital.name : 'N/A';
+            }
+
+            if (staff.doctor_id && staff.doctor_id > 0) {
+              const doctor = await this.userRepo.findOneBy({
+                id: staff.doctor_id,
+              });
+              doctorName = doctor ? doctor.name : 'N/A';
+            }
+
+          return {
+            ...staff,
+            hospital_name: hospitalName,
+            doctor_name: doctorName, // add hospital name
+          };
+        }),
+      );
+
     return {
       success: true,
-      data,
+      data:result,
       total,
       page,
       limit,

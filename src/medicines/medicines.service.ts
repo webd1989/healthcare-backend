@@ -15,6 +15,12 @@ export class MedicinesService {
   async create(dto: CreateMedicineDto): Promise<any> {
     const medicine = this.medicineRepo.create(dto);
     const saved = await this.medicineRepo.save(medicine);
+
+     // Step 2️⃣: Generate user_code (e.g., DTR-0001)
+    const userCode = `MEDI-${String(saved.id).padStart(4, '0')}`;
+
+    // Step 3️⃣: Update the same row
+    await this.medicineRepo.update(saved.id, { unique_code: userCode });
     
      return {
       success: true,
