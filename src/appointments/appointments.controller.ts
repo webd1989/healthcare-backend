@@ -172,6 +172,7 @@ async getAPTAll(
       data,
     };
   }
+  
 @UseGuards(AuthGuard('jwt'))
 @Post(':id')
 @UseInterceptors(
@@ -247,6 +248,15 @@ async saveTranscribe(
   };
 }
 
+ @UseGuards(AuthGuard('jwt'))
+  @Get('get-transcribe-history/:id')
+  async getTranscribeSummary(@Param('id') id: number) {
+    const data = await this.appointmentsService.getTranscribeSummary(id);
+    return {
+      success: true,
+      data,
+    };
+  }
 
 
 }

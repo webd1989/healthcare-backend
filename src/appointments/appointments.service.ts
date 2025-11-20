@@ -369,6 +369,10 @@ async saveTranscribe(id: number, file: Express.Multer.File): Promise<any> {
     });
 
     console.log('Transcribe API response:', externalResponse.data);
+
+    let status = externalResponse.data.status ?? "pending";
+    await this.appointmentRepo.update(id, { transcribe_status: status });
+
     return externalResponse.data;
 
   } catch (error: any) {
@@ -419,7 +423,7 @@ async getTranscribeStatus(id: number): Promise<any> {
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
-    const externalResponse = await axios.get(baseUrl+'/notes/transcribe/status/'+appointment.patient_id+'/'+appointment.visit_id,
+    const externalResponse = await axios.get(baseUrl+'notes/transcribe/status/'+appointment.patient_id+'/'+appointment.visit_id,
       {
         headers: {
           Accept: 'application/json',
@@ -431,6 +435,37 @@ async getTranscribeStatus(id: number): Promise<any> {
     trancribe_data = externalResponse.data; 
     status = externalResponse.data.data.status ?? "pending";
     await this.appointmentRepo.update(id, { transcribe_status: status });
+    
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { trancribe_data };
+}
+
+async getTranscribeSummary(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  let trancribe_data:any = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'notes/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/dialogue',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    trancribe_data = externalResponse.data;
+    
+    //status = externalResponse.data.data.status ?? "pending";
+    await this.appointmentRepo.update(id, { transcribe_status: trancribe_data.data.transcription_status });
     
   } catch (error) {
     console.error('❌ External API call failed:', error.response?.data || error.message);
