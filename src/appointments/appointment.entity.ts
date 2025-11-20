@@ -63,4 +63,7 @@ export class Appointment{
   @CreateDateColumn({ nullable: true,type: 'timestamp' })
   created_at: Date;
 
+  @Column({nullable: true, default:'pending' })
+  transcribe_status: string;
+
 }

@@ -163,7 +163,15 @@ async getAPTAll(
       data,
     };
   }
-
+ @UseGuards(AuthGuard('jwt'))
+  @Get('transcribe-uploading-status/:id')
+  async getTranscribeStatus(@Param('id') id: number) {
+    const data = await this.appointmentsService.getTranscribeStatus(id);
+    return {
+      success: true,
+      data,
+    };
+  }
 @UseGuards(AuthGuard('jwt'))
 @Post(':id')
 @UseInterceptors(
