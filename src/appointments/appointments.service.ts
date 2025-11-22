@@ -475,4 +475,99 @@ async getTranscribeSummary(id: number): Promise<any> {
   return { trancribe_data };
 }
 
+async generateSoapNotes(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  let trancribe_data:any = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+
+    const externalResponse = await axios.post(baseUrl+'notes/soap/generate',
+        {
+          patient_id: appointment.patient_id,
+          visit_id: appointment.visit_id,
+          transcript: null,
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+          },
+        },
+      );
+
+      const externalData = externalResponse.data;
+      //status = externalResponse.data.data.status ?? "pending";
+      await this.appointmentRepo.update(id, { soap_generated: "Yes" });
+      return externalData;
+  
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+    }
+
+  return true;
+}
+
+async getSoapNotes(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  let soap_summary:any = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'notes/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/soap',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    soap_summary = externalResponse.data;
+    
+    //status = externalResponse.data.data.status ?? "pending";
+    //await this.appointmentRepo.update(id, { transcribe_status: trancribe_data.data.transcription_status });
+    
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { soap_summary };
+}
+
+async getAudioFiles(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  let audioFIles:any = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'audio/files',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    audioFIles = externalResponse.data;
+
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { audioFIles };
+}
 }

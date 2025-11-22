@@ -100,5 +100,9 @@ export class CreateAppointmentDto {
   @IsString()
   @IsOptional()
   transcribe_status: string
+  
+  @IsString()
+  @IsOptional()
+  soap_generated: string
 
 }

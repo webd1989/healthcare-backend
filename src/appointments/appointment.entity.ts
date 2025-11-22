@@ -65,5 +65,8 @@ export class Appointment{
 
   @Column({nullable: true, default:'pending' })
   transcribe_status: string;
+  
+  @Column({nullable: true, default:'No' })
+  soap_generated: string;
 
 }

@@ -173,6 +173,16 @@ async getAPTAll(
     };
   }
   
+  @UseGuards(AuthGuard('jwt'))
+  @Get('audio/files/:id')
+  async getAudioFiles(@Param('id') id: number) {
+    const data = await this.appointmentsService.getAudioFiles(id);
+    return {
+      success: true,
+      data,
+    };
+  }
+  
 @UseGuards(AuthGuard('jwt'))
 @Post(':id')
 @UseInterceptors(
@@ -252,6 +262,27 @@ async saveTranscribe(
   @Get('get-transcribe-history/:id')
   async getTranscribeSummary(@Param('id') id: number) {
     const data = await this.appointmentsService.getTranscribeSummary(id);
+    return {
+      success: true,
+      data,
+    };
+  }
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('soap/notes/generate/:id')
+  async generateSoapNotes(@Param('id') id: number) {
+    const data = await this.appointmentsService.generateSoapNotes(id);
+    return {
+      success: true,
+      data,
+    };
+  }
+
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('soap/notes/get/:id')
+  async getSoapNotes(@Param('id') id: number) {
+    const data = await this.appointmentsService.getSoapNotes(id);
     return {
       success: true,
       data,
