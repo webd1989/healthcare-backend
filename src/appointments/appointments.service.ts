@@ -232,7 +232,7 @@ async findOne(id: number): Promise<any> {
 
 
   
-  if(appointment.visit_id !== "" && appointment.question_answers != '' && appointment.previsit_created == 'No'){
+  if(appointment.visit_id !== "" && appointment.question_answers != '' && appointment.question_answers != null && appointment.previsit_created == 'No'){
 
     try {
         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
@@ -252,7 +252,7 @@ async findOne(id: number): Promise<any> {
           },
         );
       } catch (error) {
-        console.error('❌ External API call failed:', error.response?.data || error.message);
+       // console.error('❌ External API call failed:', error.response?.data || error.message);
         // Optionally: return error or continue even if external call fails
       }
 
@@ -261,25 +261,26 @@ async findOne(id: number): Promise<any> {
   }
 
  let summaryData = [];
-
-  try {
-    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-    
-    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
-      {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'X-API-Key': ClinicAIID,
+  if(appointment.previsit_created == "Yes"){
+    try {
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      
+      const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+          },
         },
-      },
-    );
-    summaryData = externalResponse.data;    
-  } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
-    // Optionally: return error or continue even if external call fails
-  }
+      );
+      summaryData = externalResponse.data;    
+    } catch (error) {
+      //console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+    }
+}
 
   return { ...appointment, patientForm, patient, summaryData };
 }
@@ -569,5 +570,78 @@ async getAudioFiles(id: number): Promise<any> {
   }
 
   return { audioFIles };
+}
+
+async uploadImages(id: number, files: Express.Multer.File[]): Promise<any> {
+  const appointment = await this.findOne(id);
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+
+    const apiUrl = `${baseUrl}/patients/webhook/images`;
+    
+    const formData = new FormData();
+    formData.append('patient_id', appointment.patient_id);
+    formData.append('visit_id', appointment.visit_id);
+    formData.append('language', 'en');
+
+    // Add multiple images as the API expects (`images`)
+    files.forEach(file => {
+      formData.append('images', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+        knownLength: file.size
+      });
+    });
+
+    const externalResponse = await axios.post(apiUrl, formData, {
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      headers: {
+        ...formData.getHeaders(),
+        'X-API-Key': ClinicAIID,
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log('API Response:', externalResponse.data);
+
+    return externalResponse.data;
+
+  } catch (error: any) {
+    console.error("❌ External API Error:");
+    console.error(error.response?.data || error.message);
+
+    throw new Error(`External API upload failed: ${error.message}`);
+  }
+}
+
+async getImages(id: number): Promise<any> {
+  const appointment = await this.appointmentRepo.findOne({ where: { id } });
+  if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  let images:any = [];
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
+    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/images',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    images = externalResponse.data;
+
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+
+  return { images };
 }
 }

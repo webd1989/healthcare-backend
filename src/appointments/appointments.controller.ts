@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFile, UseInterceptors,Query, NotFoundException  } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFile, UseInterceptors,Query, NotFoundException,UploadedFiles  } from '@nestjs/common';;
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -14,6 +15,23 @@ import * as bcrypt from 'bcrypt';
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
+
+  
+@Post('upload-images/:id')
+@UseInterceptors(FilesInterceptor('images', 10))
+async uploadFiles(
+  @Param('id') id: number,
+  @UploadedFiles() images: Express.Multer.File[],
+) {
+  const data = await this.appointmentsService.uploadImages(id, images);
+
+  return {
+    message: 'Files uploaded successfully',
+    total: images.length,
+    uploadedToAI: data,
+    success: true
+  };
+}
 
 @Post('/save-form/:id')
 async updateFiledData(
@@ -290,4 +308,16 @@ async saveTranscribe(
   }
 
 
+@UseGuards(AuthGuard('jwt'))
+@Get('get-images/:id')
+async getImages(
+  @Param('id') id: number
+) {
+  const data = await this.appointmentsService.getImages(id);
+  return {
+    success: true,
+    message: 'Appointment images',
+    data,
+  };
+}
 }
