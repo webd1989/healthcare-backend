@@ -644,4 +644,30 @@ async getImages(id: number): Promise<any> {
 
   return { images };
 }
+
+async removeImage(id: string): Promise<any> {
+
+  try {
+    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    const externalResponse = await axios.delete(baseUrl+'patients/images/'+id,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-API-Key': ClinicAIID,
+        },
+      },
+    );
+    console.log(externalResponse.data);
+  } catch (error) {
+    console.error('❌ External API call failed:', error.response?.data || error.message);
+    // Optionally: return error or continue even if external call fails
+  }
+  return {
+    success: true,
+    message: 'Image deleted successfully',
+  };
+}
+
 }

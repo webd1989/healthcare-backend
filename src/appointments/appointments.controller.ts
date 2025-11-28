@@ -313,11 +313,18 @@ async saveTranscribe(
 async getImages(
   @Param('id') id: number
 ) {
-  const data = await this.appointmentsService.getImages(id);
-  return {
-    success: true,
-    message: 'Appointment images',
-    data,
-  };
+    const data = await this.appointmentsService.getImages(id);
+    return {
+      success: true,
+      message: 'Appointment images',
+      data,
+    };
+  }
+
+
+@UseGuards(AuthGuard('jwt'))
+@Delete('delete-image/:id')
+removeImage(@Param('id') id: string) {
+    return this.appointmentsService.removeImage(id);
 }
 }
