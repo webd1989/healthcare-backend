@@ -35,6 +35,9 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
 import { Appointment } from './appointments/appointment.entity';
 import { AppointmentsModule } from './appointments/appointments.module';
 
+import { Templates } from './templates/templates.entity';
+import { TemplatesModule } from './templates/templates.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -46,7 +49,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
       database: 'heathcare_db',
       entities: [
         User, Hospital, Medicines, Countries, Timezones, Plans, Patientform, Role, 
-        Orders, SupportTickets, SupportTicketComments, Appointment, Patients
+        Orders, SupportTickets, SupportTicketComments, Appointment, Patients, Templates
       ], // Entities you want to use
       synchronize: true,    // Auto create tables (disable in production)
     }),
@@ -68,7 +71,8 @@ import { AppointmentsModule } from './appointments/appointments.module';
     SuperUsersModule,
     OrdersModule,
     SupportTicketsModule,
-    AppointmentsModule
+    AppointmentsModule,
+    TemplatesModule
   ],
 })
 export class AppModule {}
