@@ -76,12 +76,14 @@ async getAll(@Body('hospital_id') hospital_id: number) {
   async findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Body('status') searchStatus?: number,
     @Body('keywords') searchTitle?: string,
   ) {
     return this.doctorsService.paginate(
       Number(page),
       Number(limit),
       searchTitle,
+      Number(searchStatus)
     );
   }
 

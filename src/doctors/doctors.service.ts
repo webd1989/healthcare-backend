@@ -44,7 +44,7 @@ export class DoctorsService {
     });
   }
 
-async paginate(page: number, limit: number, searchTitle?: string) {
+async paginate(page: number, limit: number, searchTitle?: string, searchStatus?:number) {
   const query = this.doctorRepo.createQueryBuilder('doctor');
 
   // Always filter by type = Doctor
@@ -55,6 +55,11 @@ async paginate(page: number, limit: number, searchTitle?: string) {
       'doctor.name LIKE :search OR doctor.email LIKE :search OR doctor.mobile LIKE :search OR doctor.user_code LIKE :search',
       { search: `%${searchTitle}%` },
     );
+  }
+
+  // If searchStatus > 0, add filter
+  if (searchStatus && searchStatus > 0) {
+    query.andWhere('staff.status = :searchStatus', { searchStatus });
   }
 
   const [data, total] = await query
@@ -81,12 +86,35 @@ async paginate(page: number, limit: number, searchTitle?: string) {
     }),
   );
 
+
+  // 🔹 Single query to get active & inactive counts
+  const statusCountsQuery = this.doctorRepo
+    .createQueryBuilder('doctor')
+    .select('doctor.status', 'status')
+    .addSelect('COUNT(*)', 'count')
+    .where('doctor.type = :type', { type: 'Doctor' });
+
+  statusCountsQuery.groupBy('doctor.status');
+
+  const statusCounts = await statusCountsQuery.getRawMany();
+
+  let totalActive = 0;
+  let totalInactive = 0;
+
+  // 🔹 Loop through the results
+  statusCounts.forEach((row) => {
+    if (+row.status === 1) totalActive = +row.count;
+    if (+row.status === 2) totalInactive = +row.count;
+  });
+
   return {
     success: true,
     data: result,
     total,
     page,
     limit,
+    totalActive,
+    totalInactive
   };
 }
 
