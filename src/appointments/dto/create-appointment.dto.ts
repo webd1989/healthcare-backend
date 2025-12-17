@@ -28,6 +28,10 @@ export class CreateAppointmentDto {
   @IsNumber()
   @IsOptional()
   patient_id: string;
+  
+  @IsNumber()
+  @IsOptional()
+  template_id: string;
 
   @IsNumber()
   @IsOptional()

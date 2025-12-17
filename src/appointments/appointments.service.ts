@@ -372,7 +372,7 @@ async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
 }
 
 
-async saveTranscribe(id: number, file: Express.Multer.File): Promise<any> {
+async saveTranscribe(id: number, file: Express.Multer.File, template: string): Promise<any> {
   const appointment = await this.findOne(id);
 
   try {
@@ -405,7 +405,7 @@ async saveTranscribe(id: number, file: Express.Multer.File): Promise<any> {
     console.log('Transcribe API response:', externalResponse.data);
 
     let status = externalResponse.data.status ?? "pending";
-    await this.appointmentRepo.update(id, { transcribe_status: status });
+    await this.appointmentRepo.update(id, { transcribe_status: status, template_id:template });
 
     return externalResponse.data;
 

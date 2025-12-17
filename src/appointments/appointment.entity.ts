@@ -11,6 +11,9 @@ export class Appointment{
 
   @Column({nullable: true})
   appointment_no: string;
+  
+  @Column({nullable: true})
+  template_id: string;
 
   @Column({nullable: true})
   user_name: string;

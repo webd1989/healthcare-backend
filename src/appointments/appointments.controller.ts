@@ -266,9 +266,10 @@ remove(@Param('id') id: number) {
 @UseInterceptors(FileInterceptor('file'))
 async saveTranscribe(
   @Param('id') id: number,
+  @Body('template') template: string,
   @UploadedFile() file: Express.Multer.File,   // expect only file field
 ) {  
-  const data = await this.appointmentsService.saveTranscribe(id, file );
+  const data = await this.appointmentsService.saveTranscribe(id, file, template );
   return {
     success: true,
     message: 'Appointment transcribe saved successfully',
