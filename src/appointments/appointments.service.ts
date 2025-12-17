@@ -161,34 +161,67 @@ export class AppointmentsService {
     return await query.getMany();
   }
 
-  async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
-      const query = this.appointmentRepo.createQueryBuilder('appointment');
+  async paginate(
+  page: number,
+  limit: number,
+  type?: string,
+  doctorId?: number
+) {
+  const query = this.appointmentRepo.createQueryBuilder('appointment');
 
-      if (searchTitle) {
-        query.where(
-          'appointment.user_name LIKE :search OR appointment.user_mobile LIKE :search',
-          { search: `%${searchTitle}%` },
-        );
-      }
-
-      // If doctorId > 0, add filter
-      if (doctorId && doctorId > 0) {
-        query.andWhere('appointment.doctor_id = :doctorId', { doctorId });
-      }
-
-      const [data, total] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
-
-      return {
-        success: true,
-        data,
-        total,
-        page,
-        limit,
-      };
+  // Search filter
+  if (type && !['Scheduled', 'In Progress', 'Completed', 'All'].includes(type)) {
+    query.where(
+      'appointment.user_name LIKE :search OR appointment.user_mobile LIKE :search',
+      { search: `%${type}%` }
+    );
   }
+
+  // Doctor filter
+  if (doctorId && doctorId > 0) {
+    query.andWhere('appointment.doctor_id = :doctorId', { doctorId });
+  }
+
+  // Current datetime
+  const now = new Date();
+
+  // Combine appointment date + time (MySQL syntax)
+  const appointmentDateTime = `STR_TO_DATE(CONCAT(appointment.appointment_date, ' ', appointment.appointment_time), '%Y-%m-%d %H:%i:%s')`;
+
+  // Status filter
+  if (type === 'Scheduled') {
+    query.andWhere(`${appointmentDateTime} > :now`, { now });
+  }
+
+  if (type === 'In Progress') {
+    query.andWhere(
+      `${appointmentDateTime} <= :now AND DATE_ADD(${appointmentDateTime}, INTERVAL 30 MINUTE) >= :now`,
+      { now }
+    );
+  }
+
+  if (type === 'Completed') {
+    query.andWhere(
+      `DATE_ADD(${appointmentDateTime}, INTERVAL 30 MINUTE) < :now`,
+      { now }
+    );
+  }
+
+  // Pagination
+  const [data, total] = await query
+    .orderBy('appointment.appointment_date', 'DESC')
+    .skip((page - 1) * limit)
+    .take(limit)
+    .getManyAndCount();
+
+  return {
+    success: true,
+    data,
+    total,
+    page,
+    limit,
+  };
+}
   
   async findVitals(id: number): Promise<any> {
   const appointment = await this.appointmentRepo.findOne({ where: { id } });

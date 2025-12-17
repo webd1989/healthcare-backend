@@ -151,13 +151,13 @@ async getAPTAll(
   async findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Body('keywords') searchTitle?: string,
+    @Body('type') type?: string,
     @Body('doctor_id') doctorId?: number,
   ) {
     return this.appointmentsService.paginate(
       Number(page),
       Number(limit),
-      searchTitle,
+      type,
       Number(doctorId),
     );
   }

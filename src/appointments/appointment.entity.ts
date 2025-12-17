@@ -41,6 +41,12 @@ export class Appointment{
 
   @Column({ nullable: true })
   doctor_name: string;
+  
+  @Column({ nullable: true })
+  visit_type: string;
+
+  @Column({ nullable: true })
+  chief_complaint: string;
 
   @Column({ nullable: true })
   doctor_email: string;
@@ -68,5 +74,11 @@ export class Appointment{
   
   @Column({nullable: true, default:'No' })
   soap_generated: string;
+  
+  @Column({nullable: true, type: "longtext" })
+  quick_notes: string;
+
+  @Column({nullable: true, type: "longtext" })
+  tasks: string;
 
 }

@@ -104,5 +104,21 @@ export class CreateAppointmentDto {
   @IsString()
   @IsOptional()
   soap_generated: string
+  
+  @IsString()
+  @IsOptional()
+  quick_notes: string
+  
+  @IsString()
+  @IsOptional()
+  tasks: string
+
+  @IsString()
+  @IsNotEmpty()
+  visit_type: string;
+
+  @IsString()
+  @IsNotEmpty()
+  chief_complaint: string;
 
 }
