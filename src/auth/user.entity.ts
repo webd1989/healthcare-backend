@@ -59,6 +59,10 @@ export class User {
   @Column({ nullable: true })
   timezone: string;
 
+  // Stores SOAP Summary Ordering + Pre-Visit Summary Configuration as a single JSON string.
+  @Column({ type: 'longtext', nullable: true })
+  soap_summary_settings: string;
+
   @Column()
   status: number;
 

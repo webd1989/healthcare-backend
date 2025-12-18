@@ -5,11 +5,14 @@ import { UsersService } from './users.service';
 import { User } from 'src/auth/user.entity';
 import { UpdateUserDto } from './update-user.dto';
 import { UpdatePasswordDto } from './update-password.dto';
+import { UpdateSoapSummarySettingsDto } from './update-soap-summary-settings.dto';
 import { AuthGuard } from '@nestjs/passport'; // If using JWT strategy
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService
+  ) {}
 
   // get user profile data
   @UseGuards(JwtAuthGuard)
@@ -29,6 +32,23 @@ export class UsersController {
     return {
       success: true,
       message: 'Profile updated successfully',
+      data: updatedUser,
+    };
+  }
+
+  // update SOAP Summary Settings (stored as single JSON string column on users table)
+  @UseGuards(JwtAuthGuard)
+  @Put('update-soap-summary-settings')
+  async updateSoapSummarySettings(
+    @Req() req,
+    @Body() dto: UpdateSoapSummarySettingsDto,
+  ) {
+    const userId = req.user.userId;
+    const updatedUser = await this.usersService.updateSoapSummarySettings(userId, dto);
+
+    return {
+      success: true,
+      message: 'SOAP summary settings updated successfully',
       data: updatedUser,
     };
   }

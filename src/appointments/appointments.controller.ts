@@ -288,16 +288,18 @@ async saveTranscribe(
   }
   
   @UseGuards(AuthGuard('jwt'))
-  @Get('soap/notes/generate/:id')
-  async generateSoapNotes(@Param('id') id: number) {
-    const data = await this.appointmentsService.generateSoapNotes(id);
+  @Post('soap/notes/generate/:id')
+  async generateSoapNotes(
+    @Param('id') id: number,
+    @Body('template_id') template_id: string
+) {
+    const data = await this.appointmentsService.generateSoapNotes(id, template_id);
     return {
       success: true,
       data,
     };
   }
 
-  
   @UseGuards(AuthGuard('jwt'))
   @Get('soap/notes/get/:id')
   async getSoapNotes(@Param('id') id: number) {

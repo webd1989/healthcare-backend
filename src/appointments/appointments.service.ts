@@ -7,6 +7,7 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { User } from 'src/auth/user.entity';
 import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
+import { Templates } from 'src/templates/templates.entity';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { log } from 'console';
@@ -28,6 +29,9 @@ export class AppointmentsService {
 
     @InjectRepository(Patientform)
     private readonly patientFormRepo: Repository<Patientform>,
+    
+    @InjectRepository(Templates)
+    private readonly TemplatesRepo: Repository<Templates>,
 
     private readonly configService: ConfigService
 
@@ -294,6 +298,7 @@ async findOne(id: number): Promise<any> {
   }
 
  let summaryData = [];
+ let postvisitData = [];
   if(appointment.previsit_created == "Yes"){
     try {
       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
@@ -313,9 +318,28 @@ async findOne(id: number): Promise<any> {
       //console.error('❌ External API call failed:', error.response?.data || error.message);
       // Optionally: return error or continue even if external call fails
     }
+
+  
+    try {
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary/postvisit',
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+          },
+        },
+      );
+      postvisitData = externalResponse.data;    
+    } catch (error) {
+      //console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
+    }
 }
 
-  return { ...appointment, patientForm, patient, summaryData };
+  return { ...appointment, patientForm, patient, summaryData, postvisitData };
 }
 
   async update(id: number, dto: UpdateAppointmentDto): Promise<any> {
@@ -406,6 +430,20 @@ async saveTranscribe(id: number, file: Express.Multer.File, template: string): P
 
     let status = externalResponse.data.status ?? "pending";
     await this.appointmentRepo.update(id, { transcribe_status: status, template_id:template });
+
+    //generate post visit
+    await axios.post(baseUrl+'patients/summary/postvisit',
+    {
+      patient_id: appointment.patient_id,
+      visit_id: appointment.visit_id
+    },
+    {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-API-Key': ClinicAIID,
+      },
+    });
 
     return externalResponse.data;
 
@@ -509,7 +547,7 @@ async getTranscribeSummary(id: number): Promise<any> {
   return { trancribe_data };
 }
 
-async generateSoapNotes(id: number): Promise<any> {
+async generateSoapNotes(id: number, template_id: string): Promise<any> {
   const appointment = await this.appointmentRepo.findOne({ where: { id } });
   if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
   let trancribe_data:any = [];
@@ -517,12 +555,41 @@ async generateSoapNotes(id: number): Promise<any> {
   try {
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    let templatesData:any = null;
+    const templateRow = await this.TemplatesRepo.findOne({
+      where: { id: Number(template_id) },
+      select: [
+        'template_name',
+        'description',
+        'category',
+        'speciality',
+        'subjective',
+        'objective',
+        'assessment',
+        'plan',
+        'tags',
+        'appointment_type',
+        'is_favorite',
+      ],
+    });
 
+    if (templateRow) {
+      templatesData = { ...templateRow };
+    }
+
+    console.log({
+      patient_id: appointment.patient_id,
+      visit_id: appointment.visit_id,
+      transcript: null,
+      template_data: templatesData,
+    });
+    
     const externalResponse = await axios.post(baseUrl+'notes/soap/generate',
         {
           patient_id: appointment.patient_id,
           visit_id: appointment.visit_id,
           transcript: null,
+          template_data:templatesData
         },
         {
           headers: {
@@ -658,6 +725,7 @@ async getImages(id: number): Promise<any> {
   try {
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    
     
     const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/images',
       {
