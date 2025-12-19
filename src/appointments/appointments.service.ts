@@ -13,6 +13,9 @@ import axios from 'axios';
 import { log } from 'console';
 import * as qs from 'qs';
 import FormData from 'form-data';
+// @ts-ignore
+const XLSX = require('xlsx');
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AppointmentsService {
@@ -36,6 +39,24 @@ export class AppointmentsService {
     private readonly configService: ConfigService
 
   ) {}
+
+  /**
+   * Generate appointment number with proper zero-padding
+   * Zero-pads only if ID has fewer than 4 digits
+   * @param appointmentId - The appointment ID
+   * @returns Formatted appointment number (e.g., APPT-0001, APPT-0011, APPT-1111, APPT-11111)
+   */
+  private generateAppointmentNumber(appointmentId: number): string {
+    const idString = String(appointmentId);
+    
+    // Zero-pad only if ID has fewer than 4 digits
+    if (idString.length < 4) {
+      return `APPT-${idString.padStart(4, '0')}`;
+    }
+    
+    // If ID has 4 or more digits, use as-is
+    return `APPT-${idString}`;
+  }
 
   async create(dto: CreateAppointmentDto): Promise<any> {
 
@@ -79,8 +100,8 @@ export class AppointmentsService {
     const appointment = this.appointmentRepo.create(dto);
     const saved = await this.appointmentRepo.save(appointment);
 
-      // Step 2️⃣: Generate user_code (e.g., DTR-0001)
-      const appointment_no = `APPT-${String(saved.id).padStart(6, '0')}`;
+      // Step 2️⃣: Generate appointment number with proper formatting
+      const appointment_no = this.generateAppointmentNumber(saved.id);
 
       // Step 3️⃣: Update the same row
       await this.appointmentRepo.update(saved.id, { appointment_no: appointment_no });
@@ -256,6 +277,9 @@ export class AppointmentsService {
 
 
 async findOne(id: number): Promise<any> {
+  if (!id || isNaN(id) || id <= 0) {
+    throw new NotFoundException(`Invalid appointment ID: ${id}`);
+  }
   const appointment = await this.appointmentRepo.findOne({ where: { id } });
   if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
 
@@ -343,6 +367,9 @@ async findOne(id: number): Promise<any> {
 }
 
   async update(id: number, dto: UpdateAppointmentDto): Promise<any> {
+    if (!id || isNaN(id) || id <= 0) {
+      throw new NotFoundException(`Invalid appointment ID: ${id}`);
+    }
     const appointment = await this.findOne(id);
     Object.assign(appointment, dto);
     return this.appointmentRepo.save(appointment);
@@ -769,6 +796,265 @@ async removeImage(id: string): Promise<any> {
     success: true,
     message: 'Image deleted successfully',
   };
+}
+
+async generateSampleFile(): Promise<Buffer> {
+  try {
+    const sampleData = [
+      {
+        'Patient Mobile Number': '1234567890',
+        'Patient First Name': 'John',
+        'Patient Last Name': 'Doe',
+        'Patient Age': '30',
+        'Patient Country': 'US',
+        'Patient Language': 'en',
+        'Gender': 'Male',
+        'Recently Travelled': 'No',
+        'Consent': 'Yes',
+        'Appointment Date': '2024-12-31',
+        'Appointment Time': '10:00:00',
+        'Visit Type': 'General Pre-visit',
+        'Chief Complaint': 'Regular checkup'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Appointments');
+    
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
+  } catch (error) {
+    console.error('Error in generateSampleFile:', error);
+    throw new Error(`Failed to generate sample file: ${error.message}`);
+  }
+}
+
+async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any> {
+  if (!doctorId || isNaN(doctorId) || doctorId <= 0) {
+    throw new Error('Valid doctor_id is required');
+  }
+  
+  const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet);
+
+  const results = {
+    success: 0,
+    failed: 0,
+    skipped: 0,
+    errors: [] as any[]
+  };
+
+  for (let i = 0; i < data.length; i++) {
+    const row: any = data[i];
+    try {
+      // Helper function to parse date from Excel
+      const parseDate = (dateValue: any): string => {
+        if (!dateValue) return '';
+        
+        // If it's already a string in DD-MM-YYYY format
+        if (typeof dateValue === 'string') {
+          // Try to parse DD-MM-YYYY format
+          const parts = dateValue.split(/[-\/]/);
+          if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+            return `${year}-${month}-${day}`;
+          }
+          // If it's already in YYYY-MM-DD format
+          if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return dateValue;
+          }
+        }
+        
+        // If it's an Excel serial date number
+        if (typeof dateValue === 'number') {
+          // Excel epoch starts from January 1, 1900
+          const excelEpoch = new Date(1899, 11, 30);
+          const date = new Date(excelEpoch.getTime() + dateValue * 86400000);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        
+        // If it's a Date object
+        if (dateValue instanceof Date) {
+          const year = dateValue.getFullYear();
+          const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+          const day = String(dateValue.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        
+        return '';
+      };
+
+      // Helper function to parse time from Excel
+      const parseTime = (timeValue: any): string => {
+        if (!timeValue) return '';
+        
+        // If it's already a string
+        if (typeof timeValue === 'string') {
+          // Remove any extra spaces
+          timeValue = timeValue.trim();
+          
+          // If it's in HH:MM:SS format, return as is
+          if (timeValue.match(/^\d{2}:\d{2}:\d{2}$/)) {
+            return timeValue;
+          }
+          
+          // If it's in HH:MM format, add :00
+          if (timeValue.match(/^\d{2}:\d{2}$/)) {
+            return timeValue + ':00';
+          }
+          
+          // Try to parse HH:MM:SS from various formats
+          const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+          if (timeMatch) {
+            const hours = timeMatch[1].padStart(2, '0');
+            const minutes = timeMatch[2].padStart(2, '0');
+            const seconds = timeMatch[3] ? timeMatch[3].padStart(2, '0') : '00';
+            return `${hours}:${minutes}:${seconds}`;
+          }
+        }
+        
+        // If it's a number (Excel time as fraction of day)
+        if (typeof timeValue === 'number' && timeValue < 1) {
+          const totalSeconds = Math.round(timeValue * 86400);
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        // If it's a Date object, extract time
+        if (timeValue instanceof Date) {
+          const hours = String(timeValue.getHours()).padStart(2, '0');
+          const minutes = String(timeValue.getMinutes()).padStart(2, '0');
+          const seconds = String(timeValue.getSeconds()).padStart(2, '0');
+          return `${hours}:${minutes}:${seconds}`;
+        }
+        
+        return '';
+      };
+
+      // Map Excel columns to appointment fields
+      const rawDate = row['Appointment Date'] || row['appointment_date'] || '';
+      const rawTime = row['Appointment Time'] || row['appointment_time'] || '';
+      
+      const appointmentData: CreateAppointmentDto = {
+        user_mobile: String(row['Patient Mobile Number'] || row['patient_mobile'] || ''),
+        user_first_name: String(row['Patient First Name'] || row['patient_first_name'] || ''),
+        user_last_name: String(row['Patient Last Name'] || row['patient_last_name'] || ''),
+        user_name: `${row['Patient First Name'] || row['patient_first_name'] || ''} ${row['Patient Last Name'] || row['patient_last_name'] || ''}`.trim(),
+        user_age: String(row['Patient Age'] || row['patient_age'] || '0'),
+        user_country: String(row['Patient Country'] || row['patient_country'] || 'US'),
+        user_language: String(row['Patient Language'] || row['patient_language'] || 'en'),
+        user_gender: String(row['Gender'] || row['gender'] || 'Male'),
+        recently_travelled: String(row['Recently Travelled'] || row['recently_travelled'] || 'No').toLowerCase() === 'yes',
+        consent: String(row['Consent'] || row['consent'] || 'Yes').toLowerCase() === 'yes',
+        appointment_date: parseDate(rawDate),
+        appointment_time: parseTime(rawTime),
+        visit_type: String(row['Visit Type'] || row['visit_type'] || ''),
+        chief_complaint: String(row['Chief Complaint'] || row['chief_complaint'] || ''),
+        doctor_id: String(doctorId),
+        user_id: '',
+        appointment_no: '',
+        patient_id: '',
+        template_id: '',
+        visit_id: '',
+        user_email: '',
+        doctor_name: '',
+        doctor_email: '',
+        fields_data: '',
+        question_answers: '',
+        appointment_vitals: '',
+        previsit_created: '',
+        transcribe_status: '',
+        soap_generated: '',
+        quick_notes: '',
+        tasks: '',
+      };
+
+      // Validate required fields
+      if (!appointmentData.user_mobile || !appointmentData.user_first_name || 
+          !appointmentData.user_last_name || !appointmentData.appointment_date || 
+          !appointmentData.appointment_time || !appointmentData.visit_type || 
+          !appointmentData.chief_complaint) {
+        throw new Error('Missing required fields');
+      }
+
+      // Get doctor
+      const doctor = await this.getUserById(doctorId);
+      
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+
+      // Check if patient exists by mobile
+      let user: any = await this.patientsRepo.findOne({ 
+        where: { mobile: appointmentData.user_mobile, doctor_id: doctorId } 
+      });
+
+      if (!user) {
+        // Create new patient
+        user = await this.createPatient({
+          first_name: appointmentData.user_first_name,
+          last_name: appointmentData.user_last_name,
+          mobile: appointmentData.user_mobile,
+          age: String(appointmentData.user_age),
+          country: appointmentData.user_country,
+          language: appointmentData.user_language,
+          recently_travelled: appointmentData.recently_travelled,
+          consent: appointmentData.consent,
+          gender: appointmentData.user_gender,
+          doctor_id: doctorId,
+          hospital_id: doctor.hospital_id,
+          status: 1,
+        });
+      }
+
+      appointmentData.user_id = String(user.id);
+      appointmentData.user_name = user.first_name + ' ' + user.last_name;
+      appointmentData.user_email = user.email || '';
+      appointmentData.doctor_name = doctor.name;
+      appointmentData.doctor_email = doctor.email;
+
+      // Check for duplicate appointment (same user, date, and time)
+      const existingAppointment = await this.appointmentRepo.findOne({
+        where: {
+          user_id: Number(appointmentData.user_id),
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
+          doctor_id: doctorId
+        }
+      });
+
+      if (existingAppointment) {
+        results.skipped++;
+        results.errors.push({
+          row: i + 2, // +2 because Excel rows start at 1 and we have header
+          error: `Duplicate appointment skipped: Appointment already exists for ${appointmentData.user_name} on ${appointmentData.appointment_date} at ${appointmentData.appointment_time}`
+        });
+        continue; // Skip this row
+      }
+
+      // Create appointment using existing create method
+      await this.create(appointmentData);
+      results.success++;
+    } catch (error: any) {
+      results.failed++;
+      results.errors.push({
+        row: i + 2, // +2 because Excel rows start at 1 and we have header
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+
+  return results;
 }
 
 }

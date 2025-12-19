@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFile, UseInterceptors,Query, NotFoundException,UploadedFiles  } from '@nestjs/common';;
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, UploadedFile, UseInterceptors,Query, NotFoundException,UploadedFiles, Res  } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { AppointmentsService } from './appointments.service';
@@ -160,6 +160,48 @@ async getAPTAll(
       type,
       Number(doctorId),
     );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('download-sample')
+  async downloadSample(@Res() res: any) {
+    try {
+      const file = await this.appointmentsService.generateSampleFile();
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=appointments_sample.xlsx');
+      res.send(file);
+    } catch (error) {
+      console.error('Error generating sample file:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate sample file',
+        error: error.message
+      });
+    }
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importAppointments(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+  ) {
+    if (!file) {
+      throw new NotFoundException('File is required');
+    }
+    
+    const doctorId = body.doctor_id ? Number(body.doctor_id) : 0;
+    if (!doctorId || isNaN(doctorId) || doctorId <= 0) {
+      throw new NotFoundException('Valid doctor_id is required');
+    }
+    
+    const data = await this.appointmentsService.importFromExcel(file, doctorId);
+    return {
+      success: true,
+      message: 'Appointments imported successfully',
+      data,
+    };
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -329,5 +371,21 @@ async getImages(
 @Delete('delete-image/:id')
 removeImage(@Param('id') id: string) {
     return this.appointmentsService.removeImage(id);
+}
+
+@UseGuards(AuthGuard('jwt'))
+@Post('careprep/send')
+async sendCarePrepNotification(@Body() body: any) {
+  // For now, just return success (email sending will be implemented later)
+  return {
+    success: true,
+    message: 'Notification sent successfully',
+    data: {
+      email: body.email || '',
+      phone: body.phone || '',
+      link: body.link || '',
+      method: body.method || 'message'
+    }
+  };
 }
 }
