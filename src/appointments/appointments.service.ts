@@ -1026,10 +1026,10 @@ async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any>
       // Check for duplicate appointment (same user, date, and time)
       const existingAppointment = await this.appointmentRepo.findOne({
         where: {
-          user_id: Number(appointmentData.user_id),
+          user_id: String(appointmentData.user_id),
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
-          doctor_id: doctorId
+          doctor_id: String(doctorId)
         }
       });
 
