@@ -51,6 +51,28 @@ async getAll() {
   return { records: data, success:true };
 }
 
+@UseGuards(AuthGuard('jwt'))
+@Get('dashboard/total')
+async getTotalOrganizations() {
+  const data = await this.hospitalsService.getTotalActiveCount();
+  return {
+    success: true,
+    data: data.total,
+    monthlyChange: data.monthlyChange,
+    changeText: data.changeText,
+  };
+}
+
+@UseGuards(AuthGuard('jwt'))
+@Get('dashboard/recent')
+async getRecentOrganizations() {
+  const data = await this.hospitalsService.getRecentOrganizations();
+  return {
+    success: true,
+    data,
+  };
+}
+
   @UseGuards(AuthGuard('jwt'))
   @Post('/list')
   async findAll(

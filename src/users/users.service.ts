@@ -194,4 +194,45 @@ export class UsersService {
     return { message: 'Password updated successfully',success: true };
   }
 
+  async getActiveUsersCount(): Promise<any> {
+    try {
+      // Count users with type = 'Doctor' and status = 1
+      const count = await this.usersRepo
+        .createQueryBuilder('user')
+        .where('user.type = :type', { type: 'Doctor' })
+        .andWhere('user.status = :status', { status: 1 })
+        .getCount();
+      
+      // Get current date
+      const now = new Date();
+      
+      // Count doctors created this month (type = 'Doctor' and status = 1)
+      const thisMonthCount = await this.usersRepo
+        .createQueryBuilder('user')
+        .where('user.type = :type', { type: 'Doctor' })
+        .andWhere('user.status = :status', { status: 1 })
+        .andWhere('YEAR(user.created_at) = :year', { year: now.getFullYear() })
+        .andWhere('MONTH(user.created_at) = :month', { month: now.getMonth() + 1 })
+        .getCount();
+      
+      // Calculate change text
+      const changeText = thisMonthCount > 0 ? `+${thisMonthCount} this month` : '0 this month';
+      
+      console.log('Total active doctors count (type = Doctor, status = 1):', count);
+      console.log('Current year:', now.getFullYear());
+      console.log('Current month:', now.getMonth() + 1);
+      console.log('This month count:', thisMonthCount);
+      console.log('Monthly change text:', changeText);
+      
+      return {
+        total: count,
+        monthlyChange: thisMonthCount,
+        changeText: changeText,
+      };
+    } catch (error) {
+      console.error('Error counting active users:', error);
+      throw error;
+    }
+  }
+
 }

@@ -61,4 +61,16 @@ export class UsersController {
     return this.usersService.updatePassword(userId, dto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('dashboard/active-users')
+  async getActiveUsers() {
+    const data = await this.usersService.getActiveUsersCount();
+    return {
+      success: true,
+      data: data.total,
+      monthlyChange: data.monthlyChange,
+      changeText: data.changeText,
+    };
+  }
+
 }

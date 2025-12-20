@@ -86,6 +86,49 @@ async getAll() {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('dashboard/monthly-revenue')
+  async getMonthlyRevenue() {
+    const data = await this.ordersService.getMonthlyRevenue();
+    return {
+      success: true,
+      data: data.total,
+      percentageChange: data.percentageChange,
+      changeText: data.changeText,
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('dashboard/revenue-by-plan')
+  async getRevenueByPlan() {
+    const data = await this.ordersService.getRevenueByPlan();
+    return {
+      success: true,
+      data: data.plans,
+      totalMRR: data.totalMRR,
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('dashboard/billing-metrics')
+  async getBillingMetrics() {
+    const data = await this.ordersService.getBillingMetrics();
+    return {
+      success: true,
+      data,
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('dashboard/subscription-breakdown')
+  async getSubscriptionBreakdown() {
+    const data = await this.ordersService.getSubscriptionBreakdown();
+    return {
+      success: true,
+      data,
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: number) {
     const data = await this.ordersService.findOne(id);
