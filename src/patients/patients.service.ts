@@ -30,42 +30,54 @@ export class PatientsService {
   async create(dto: CreatePatientDto): Promise<any> {
 
      try {
-      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-      
-      const externalResponse = await axios.post(baseUrl+'patients/',
-        {
-          first_name: dto.first_name,
-          last_name: dto.last_name,
-          mobile: dto.mobile,
-          age: dto.age,
-          gender: dto.gender,
-          recently_travelled: dto.recently_travelled ?? false,
-          consent: dto.consent ?? true,
-          country: dto.country ?? 'US',
-          language: dto.language ?? 'en',
-        },
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-API-Key': ClinicAIID,
+      // Get doctor user_code for X-Doctor-ID header
+      const doctor = await this.userRepo.findOne({ 
+        where: { id: dto.doctor_id, type: 'Doctor' } 
+      });
 
+      if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        // Skip API call if user_code is empty
+      } else {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        
+        console.log('🔵 [API-1] Calling: POST /patients/ - Create Patient');
+        const externalResponse = await axios.post(baseUrl+'patients/',
+          {
+            first_name: dto.first_name,
+            last_name: dto.last_name,
+            mobile: dto.mobile,
+            age: dto.age,
+            gender: dto.gender,
+            recently_travelled: dto.recently_travelled ?? false,
+            consent: dto.consent ?? true,
+            country: dto.country ?? 'US',
+            language: dto.language ?? 'en',
+            doctor_id: doctor.user_code,
           },
-        },
-      );
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
+              'X-Doctor-ID': doctor.user_code,
+            },
+          },
+        );
 
-      const externalData = externalResponse.data?.data;
+        const externalData = externalResponse.data?.data;
 
-      dto.patient_id = externalData?.patient_id;
-      dto.visit_id = externalData?.visit_id;
-      dto.first_question = externalData?.first_question;
+        dto.patient_id = externalData?.patient_id;
+        dto.visit_id = externalData?.visit_id;
+        dto.first_question = externalData?.first_question;
 
-     // console.log(dto);
-      
-     // console.log('External API Response:', externalResponse.data);
+       // console.log(dto);
+        
+       // console.log('External API Response:', externalResponse.data);
+      }
     } catch (error) {
-      console.error('❌ External API call failed:', error.response?.data || error.message);
+      console.error('❌ [API-1] External API call failed:', error.response?.data || error.message);
       // Optionally: return error or continue even if external call fails
     }
 
@@ -96,6 +108,31 @@ export class PatientsService {
   async consultationsAnswer(formData:any): Promise<any> {
 
      try {
+      // Get patient to find doctor_id
+      const patient = await this.patientRepo.findOne({ 
+        where: { patient_id: formData.form_patient_id } 
+      });
+
+      if (!patient || !patient.doctor_id) {
+        return {
+          success: false,
+          message: 'Patient or doctor not found',
+        };
+      }
+
+      // Get doctor user_code for X-Doctor-ID header
+      const doctor = await this.userRepo.findOne({ 
+        where: { id: patient.doctor_id, type: 'Doctor' } 
+      });
+
+      if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        return {
+          success: false,
+          message: 'Doctor user_code is empty. API call cannot be made.',
+        };
+      }
+
       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
       const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
        // Use qs to encode form data like curl -d does
@@ -103,8 +140,10 @@ export class PatientsService {
           form_patient_id: formData.form_patient_id,
           form_visit_id: formData.form_visit_id,
           form_answer: formData.form_answer,
+          doctor_id: doctor.user_code,
         });
 
+        console.log('🔵 [API-2] Calling: POST /patients/consultations/answer - Consultation Answer');
         const externalResponse = await axios.post(
           `${baseUrl}patients/consultations/answer`,
           formBody,
@@ -113,6 +152,7 @@ export class PatientsService {
               Accept: 'application/json',
               'Content-Type': 'application/x-www-form-urlencoded',
               'X-API-Key': ClinicAIID,
+              'X-Doctor-ID': doctor.user_code,
             },
           },
         );
@@ -141,9 +181,35 @@ export class PatientsService {
   async consultationsAnswerEdit(formData:any): Promise<any> {
 
      try {
+      // Get patient to find doctor_id
+      const patient = await this.patientRepo.findOne({ 
+        where: { patient_id: formData.form_patient_id } 
+      });
+
+      if (!patient || !patient.doctor_id) {
+        return {
+          success: false,
+          message: 'Patient or doctor not found',
+        };
+      }
+
+      // Get doctor user_code for X-Doctor-ID header
+      const doctor = await this.userRepo.findOne({ 
+        where: { id: patient.doctor_id, type: 'Doctor' } 
+      });
+
+      if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        return {
+          success: false,
+          message: 'Doctor user_code is empty. API call cannot be made.',
+        };
+      }
+
       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
       const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
        // Use qs to encode form data like curl -d does
+       console.log('🔵 [API-3] Calling: PATCH /patients/consultations/answer - Consultation Answer Edit');
        const externalResponse = await axios.patch(
         `${baseUrl}patients/consultations/answer`,
         {
@@ -151,12 +217,14 @@ export class PatientsService {
           visit_id: formData.form_visit_id,
           question_number: formData.question_number,
           new_answer: formData.form_answer,
+          doctor_id: doctor.user_code,
         },
         {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
             'X-API-Key': ClinicAIID,
+            'X-Doctor-ID': doctor.user_code,
           },
         }
       );
@@ -173,7 +241,7 @@ export class PatientsService {
       
      // console.log('External API Response:', externalResponse.data);
     } catch (error) {
-      console.error('❌ External API call failed:', error.response?.data || error.message);
+      console.error('❌ [API-3] External API call failed:', error.response?.data || error.message);
       // Optionally: return error or continue even if external call fails
       return {
       success: false,

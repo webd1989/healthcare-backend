@@ -143,35 +143,44 @@ export class UsersService {
 
      // Call ClinicAI (do not block saving if it fails)
      try {
-       const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL') || '';
-       const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY') || '';
+       // Check if user is a doctor and has user_code
+       if (user.type !== 'Doctor' || !user.user_code || user.user_code.trim() === '') {
+         console.error('❌ User is not a doctor or user_code is empty. API call skipped.');
+         // Skip API call if user_code is empty or user is not a doctor
+       } else {
+         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL') || '';
+         const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY') || '';
 
-       if (baseUrl) {
-         const url = baseUrl.endsWith('/')
-           ? `${baseUrl}doctor/preferences`
-           : `${baseUrl}/doctor/preferences`;
+         if (baseUrl) {
+          const url = baseUrl.endsWith('/')
+            ? `${baseUrl}doctor/preferences`
+            : `${baseUrl}/doctor/preferences`;
 
-         const externalResponse = await axios.post(url, aiPayload, {
-           headers: {
-             Accept: 'application/json',
-             'Content-Type': 'application/json',
-             'X-API-Key': ClinicAIID,
-           },
-         });
+          console.log('🔵 [API-21] Calling: POST /doctor/preferences - Update SOAP Summary Settings');
+          const externalResponse = await axios.post(url, aiPayload, {
+             headers: {
+               Accept: 'application/json',
+               'Content-Type': 'application/json',
+               'X-API-Key': ClinicAIID,
+               'X-Doctor-ID': user.user_code,
+             },
+           });
 
-         // Keep logs light
-         //console.log('ClinicAI previsit summary settings updated:', externalResponse?.data?.data); 
+           // Keep logs light
+           //console.log('ClinicAI previsit summary settings updated:', externalResponse?.data?.data); 
+         }
        }
-     } catch (error: any) {
-       // Do not block saving if ClinicAI call fails, but print error for debugging.
-       const status = error?.response?.status;
-       const data = error?.response?.data;
-       const message = error?.message;
-       console.error('ClinicAI previsit summary settings update failed:', {
-         status,
-         message,
-         data,
-       });
+    } catch (error: any) {
+      // Do not block saving if ClinicAI call fails, but print error for debugging.
+      console.error('❌ [API-21] External API call failed:', error.response?.data || error.message);
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      const message = error?.message;
+      console.error('❌ [API-21] ClinicAI previsit summary settings update failed:', {
+        status,
+        message,
+        data,
+      });
      }
 
     return this.usersRepo.save(user);

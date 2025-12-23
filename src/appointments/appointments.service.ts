@@ -58,42 +58,74 @@ export class AppointmentsService {
     return `APPT-${idString}`;
   }
 
+  /**
+   * Get doctor user_code for X-Doctor-ID header
+   * @param doctorId - The doctor ID
+   * @returns Doctor user_code or null if not found or empty
+   */
+  private async getDoctorUserCode(doctorId: number): Promise<string | null> {
+    if (!doctorId || doctorId <= 0) {
+      return null;
+    }
+    
+    const doctor = await this.userRepo.findOne({ 
+      where: { id: doctorId, type: 'Doctor' } 
+    });
+    
+    if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
+      return null;
+    }
+    
+    return doctor.user_code;
+  }
+
   async create(dto: CreateAppointmentDto): Promise<any> {
 
     try {
-    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-      const externalResponse = await axios.post(baseUrl+'patients/',
-        {
-          first_name: dto.user_first_name,
-          last_name: dto.user_last_name,
-          mobile: dto.user_mobile,
-          age: dto.user_age,
-          gender: dto.user_gender,
-          recently_travelled: dto.recently_travelled ?? false,
-          consent: dto.consent ?? true,
-          country: 'US',
-          language: 'en',
-        },
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-API-Key': ClinicAIID,
+      // Get doctor user_code for X-Doctor-ID header
+      const doctorUserCode = await this.getDoctorUserCode(Number(dto.doctor_id));
+      
+      if (!doctorUserCode) {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        // Skip API call if user_code is empty
+      } else {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        console.log('🔵 [API-4] Calling: POST /patients/ - Create Patient (Appointment)');
+        const externalResponse = await axios.post(baseUrl+'patients/',
+          {
+            first_name: dto.user_first_name,
+            last_name: dto.user_last_name,
+            mobile: dto.user_mobile,
+            age: dto.user_age,
+            gender: dto.user_gender,
+            recently_travelled: dto.recently_travelled ?? false,
+            consent: dto.consent ?? true,
+            country: 'US',
+            language: 'en',
+            doctor_id: doctorUserCode,
           },
-        },
-      );
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
+              'X-Doctor-ID': doctorUserCode,
+            },
+          },
+        );
 
-      const externalData = externalResponse.data?.data;
+        const externalData = externalResponse.data?.data;
 
-      dto.patient_id = externalData?.patient_id;
-      dto.visit_id = externalData?.visit_id;
+        dto.patient_id = externalData?.patient_id;
+        dto.visit_id = externalData?.visit_id;
+      }
   
       // console.log(dto);
       
       // console.log('External API Response:', externalResponse.data);
     } catch (error) {
-      console.error('❌ External API call failed:', error.response?.data || error.message);
+      console.error('❌ [API-4] External API call failed:', error.response?.data || error.message);
       // Optionally: return error or continue even if external call fails
     }
 
@@ -116,41 +148,52 @@ export class AppointmentsService {
  async createPatient(data: Partial<Patients>): Promise<Patients> {
 
    try {
-        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        // Get doctor user_code for X-Doctor-ID header
+        const doctorUserCode = data.doctor_id ? await this.getDoctorUserCode(data.doctor_id) : null;
         
-        const externalResponse = await axios.post(baseUrl+'patients/',
-          {
-            first_name: data.first_name,
-            last_name: data.last_name,
-            mobile: data.mobile,
-            age: data.age,
-            gender: data.gender,
-            recently_travelled: data.recently_travelled ?? false,
-            consent: data.consent ?? true,
-            country: data.country ?? 'US',
-            language: data.language ?? 'en',
-          },
-          {
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-API-Key': ClinicAIID,
+        if (!doctorUserCode) {
+          console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+          // Skip API call if user_code is empty
+        } else {
+          const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+          const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+          
+          console.log('🔵 [API-5] Calling: POST /patients/ - Create Patient (createPatient)');
+          const externalResponse = await axios.post(baseUrl+'patients/',
+            {
+              first_name: data.first_name,
+              last_name: data.last_name,
+              mobile: data.mobile,
+              age: data.age,
+              gender: data.gender,
+              recently_travelled: data.recently_travelled ?? false,
+              consent: data.consent ?? true,
+              country: data.country ?? 'US',
+              language: data.language ?? 'en',
+              doctor_id: doctorUserCode,
             },
-          },
-        );
+            {
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-API-Key': ClinicAIID,
+                'X-Doctor-ID': doctorUserCode,
+              },
+            },
+          );
   
-        const externalData = externalResponse.data?.data;
+          const externalData = externalResponse.data?.data;
   
-        data.patient_id = externalData?.patient_id;
-        data.visit_id = externalData?.visit_id;
-        data.first_question = externalData?.first_question;
+          data.patient_id = externalData?.patient_id;
+          data.visit_id = externalData?.visit_id;
+          data.first_question = externalData?.first_question;
+        }
   
        // console.log(dto);
         
        // console.log('External API Response:', externalResponse.data);
       } catch (error) {
-        console.error('❌ External API call failed:', error.response?.data || error.message);
+        console.error('❌ [API-5] External API call failed:', error.response?.data || error.message);
         // Optionally: return error or continue even if external call fails
       }
 
@@ -254,21 +297,31 @@ export class AppointmentsService {
    let vitals = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { vitals };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
-    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/vitals',
+    console.log('🔵 [API-6] Calling: GET /patients/{patient_id}/visits/{visit_id}/vitals - Get Vitals');
+    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/vitals?doctor_id='+doctorUserCode,
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
     vitals = externalResponse.data; 
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-6] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
@@ -296,70 +349,92 @@ async findOne(id: number): Promise<any> {
   if(appointment.visit_id !== "" && appointment.question_answers != '' && appointment.question_answers != null && appointment.previsit_created == 'No'){
 
     try {
-        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        // Get doctor user_code for X-Doctor-ID header
+        const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
         
-        const externalResponse = await axios.post(baseUrl+'patients/summary/previsit',
-          {
-            patient_id: appointment.patient_id,
-            visit_id: appointment.visit_id
-          },
-          {
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-API-Key': ClinicAIID,
+        if (!doctorUserCode) {
+          console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        } else {
+          const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+          const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+          
+          console.log('🔵 [API-7] Calling: POST /patients/summary/previsit - Previsit Summary');
+          const externalResponse = await axios.post(baseUrl+'patients/summary/previsit',
+            {
+              patient_id: appointment.patient_id,
+              visit_id: appointment.visit_id,
+              doctor_id: doctorUserCode,
             },
-          },
-        );
+            {
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-API-Key': ClinicAIID,
+                'X-Doctor-ID': doctorUserCode,
+              },
+            },
+          );
+          
+          await this.appointmentRepo.update(appointment.id, { previsit_created: "Yes" });
+        }
       } catch (error) {
        // console.error('❌ External API call failed:', error.response?.data || error.message);
         // Optionally: return error or continue even if external call fails
       }
-
-    await this.appointmentRepo.update(appointment.id, { previsit_created: "Yes" });
 
   }
 
  let summaryData = [];
  let postvisitData = [];
   if(appointment.previsit_created == "Yes"){
-    try {
-      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
       
-      const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-API-Key': ClinicAIID,
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API calls skipped.');
+    } else {
+      try {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        
+        console.log('🔵 [API-8] Calling: GET /patients/{patient_id}/visits/{visit_id}/summary - Get Summary');
+        const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
+              'X-Doctor-ID': doctorUserCode,
+            },
           },
-        },
-      );
-      summaryData = externalResponse.data;    
-    } catch (error) {
-      //console.error('❌ External API call failed:', error.response?.data || error.message);
-      // Optionally: return error or continue even if external call fails
-    }
+        );
+        summaryData = externalResponse.data;    
+        
+      } catch (error) {
+        //console.error('❌ External API call failed:', error.response?.data || error.message);
+        // Optionally: return error or continue even if external call fails
+      }
 
-  
-    try {
-      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-      const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary/postvisit',
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-API-Key': ClinicAIID,
+    
+      try {
+        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+        console.log('🔵 [API-9] Calling: GET /patients/{patient_id}/visits/{visit_id}/summary/postvisit - Get Postvisit Summary');
+        const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary/postvisit',
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'X-API-Key': ClinicAIID,
+              'X-Doctor-ID': doctorUserCode,
+            },
           },
-        },
-      );
-      postvisitData = externalResponse.data;    
-    } catch (error) {
-      //console.error('❌ External API call failed:', error.response?.data || error.message);
-      // Optionally: return error or continue even if external call fails
+        );
+        postvisitData = externalResponse.data;  
+      } catch (error) {
+        //console.error('❌ External API call failed:', error.response?.data || error.message);
+        // Optionally: return error or continue even if external call fails
+      }
     }
 }
 
@@ -380,15 +455,24 @@ async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
     Object.assign(appointment, dto);
 
     try {
-  const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-  const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      // Get doctor user_code for X-Doctor-ID header
+      const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+      
+      if (!doctorUserCode) {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        return false;
+      }
 
-    // Build full API URL EXACTLY like your curl command
-    const apiUrl = `${baseUrl}patients/${appointment.patient_id}/visits/${appointment.visit_id}/vitals`;
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+
+      // Build full API URL EXACTLY like your curl command
+      const apiUrl = `${baseUrl}patients/${appointment.patient_id}/visits/${appointment.visit_id}/vitals`;
 
       const vitals = dto.appointment_vitals
       ? JSON.parse(dto.appointment_vitals)
       : {};
+      console.log('🔵 [API-10] Calling: POST /patients/{patient_id}/visits/{visit_id}/vitals - Update Vitals');
       const externalResponse = await axios.post(
         apiUrl,
         {
@@ -401,12 +485,14 @@ async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
           height: vitals.height,
           bmi: vitals.bmi,
           notes: vitals.notes,
+          doctor_id: doctorUserCode,
         },
         {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
             'X-API-Key': ClinicAIID, // REQUIRED
+            'X-Doctor-ID': doctorUserCode,
           },
         }
       );
@@ -416,7 +502,7 @@ async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
       return this.appointmentRepo.save(appointment);
 
     } catch (error) {
-      console.error('❌ External API call failed:', error.response?.data || error.message);
+      console.error('❌ [API-10] External API call failed:', error.response?.data || error.message);
     }
 
     return false;
@@ -427,14 +513,24 @@ async saveTranscribe(id: number, file: Express.Multer.File, template: string): P
   const appointment = await this.findOne(id);
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return null;
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
 
     const apiUrl = `${baseUrl}notes/transcribe`;
     
+    console.log('🔵 [API-11] Calling: POST /notes/transcribe - Save Transcribe');
     const formData = new FormData();
     formData.append('patient_id', appointment.patient_id);
     formData.append('visit_id', appointment.visit_id);
+    formData.append('doctor_id', doctorUserCode);
     formData.append('language', 'en');
 
     formData.append('audio_file', file.buffer, {
@@ -449,6 +545,7 @@ async saveTranscribe(id: number, file: Express.Multer.File, template: string): P
       headers: {
         ...formData.getHeaders(), 
         'X-API-Key': ClinicAIID,     
+        'X-Doctor-ID': doctorUserCode,
         'Accept': 'application/json',  
       },
     });
@@ -459,23 +556,26 @@ async saveTranscribe(id: number, file: Express.Multer.File, template: string): P
     await this.appointmentRepo.update(id, { transcribe_status: status, template_id:template });
 
     //generate post visit
+    console.log('🔵 [API-12] Calling: POST /patients/summary/postvisit - Generate Postvisit');
     await axios.post(baseUrl+'patients/summary/postvisit',
     {
       patient_id: appointment.patient_id,
-      visit_id: appointment.visit_id
+      visit_id: appointment.visit_id,
+      doctor_id: doctorUserCode,
     },
     {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-API-Key': ClinicAIID,
+        'X-Doctor-ID': doctorUserCode,
       },
     });
 
     return externalResponse.data;
 
   } catch (error: any) {
-    console.error("❌ External API call failed:");
+    console.error("❌ [API-11] External API call failed:");
     console.error("Status:", error.response?.status);
     console.error("Response:", error.response?.data);
     console.error("Message:", error.message);
@@ -519,15 +619,25 @@ async getTranscribeStatus(id: number): Promise<any> {
   let status = "pending";
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { trancribe_data };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
-    const externalResponse = await axios.get(baseUrl+'notes/transcribe/status/'+appointment.patient_id+'/'+appointment.visit_id,
+    console.log('🔵 [API-13] Calling: GET /notes/transcribe/status/{patient_id}/{visit_id} - Get Transcribe Status');
+    const externalResponse = await axios.get(baseUrl+'notes/transcribe/status/'+appointment.patient_id+'/'+appointment.visit_id+'?doctor_id='+doctorUserCode,
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
@@ -536,7 +646,7 @@ async getTranscribeStatus(id: number): Promise<any> {
     await this.appointmentRepo.update(id, { transcribe_status: status });
     
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-13] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
@@ -549,15 +659,25 @@ async getTranscribeSummary(id: number): Promise<any> {
   let trancribe_data:any = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { trancribe_data };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
-    const externalResponse = await axios.get(baseUrl+'notes/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/dialogue',
+    console.log('🔵 [API-14] Calling: GET /notes/{patient_id}/visits/{visit_id}/dialogue - Get Transcribe Summary');
+    const externalResponse = await axios.get(baseUrl+'notes/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/dialogue?doctor_id='+doctorUserCode,
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
@@ -567,7 +687,7 @@ async getTranscribeSummary(id: number): Promise<any> {
     await this.appointmentRepo.update(id, { transcribe_status: trancribe_data.data.transcription_status });
     
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-14] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
@@ -580,6 +700,14 @@ async generateSoapNotes(id: number, template_id: string): Promise<any> {
   let trancribe_data:any = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return false;
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     let templatesData:any = null;
@@ -611,10 +739,12 @@ async generateSoapNotes(id: number, template_id: string): Promise<any> {
       template_data: templatesData,
     });
     
+    console.log('🔵 [API-15] Calling: POST /notes/soap/generate - Generate SOAP Notes');
     const externalResponse = await axios.post(baseUrl+'notes/soap/generate',
         {
           patient_id: appointment.patient_id,
           visit_id: appointment.visit_id,
+          doctor_id: doctorUserCode,
           transcript: null,
           template_data:templatesData
         },
@@ -623,6 +753,7 @@ async generateSoapNotes(id: number, template_id: string): Promise<any> {
             Accept: 'application/json',
             'Content-Type': 'application/json',
             'X-API-Key': ClinicAIID,
+            'X-Doctor-ID': doctorUserCode,
           },
         },
       );
@@ -633,7 +764,7 @@ async generateSoapNotes(id: number, template_id: string): Promise<any> {
       return externalData;
   
     } catch (error) {
-      console.error('❌ External API call failed:', error.response?.data || error.message);
+      console.error('❌ [API-15] External API call failed:', error.response?.data || error.message);
       // Optionally: return error or continue even if external call fails
     }
 
@@ -646,15 +777,26 @@ async getSoapNotes(id: number): Promise<any> {
   let soap_summary:any = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { soap_summary };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
+    console.log('🔵 [API-16] Calling: GET /notes/{patient_id}/visits/{visit_id}/soap - Get SOAP Notes');
+    // Try POST with doctor_id in body (similar to API-15 soap/generate)
     const externalResponse = await axios.get(baseUrl+'notes/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/soap',
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
@@ -664,7 +806,7 @@ async getSoapNotes(id: number): Promise<any> {
     //await this.appointmentRepo.update(id, { transcribe_status: trancribe_data.data.transcription_status });
     
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-16] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
@@ -677,22 +819,32 @@ async getAudioFiles(id: number): Promise<any> {
   let audioFIles:any = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { audioFIles };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
-    const externalResponse = await axios.get(baseUrl+'audio/files',
+    console.log('🔵 [API-17] Calling: GET /audio/files - Get Audio Files');
+    const externalResponse = await axios.get(baseUrl+'audio/files?doctor_id='+doctorUserCode,
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
     audioFIles = externalResponse.data;
 
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-17] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
@@ -703,14 +855,24 @@ async uploadImages(id: number, files: Express.Multer.File[]): Promise<any> {
   const appointment = await this.findOne(id);
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      throw new Error('Doctor user_code is empty. API call cannot be made.');
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
 
     const apiUrl = `${baseUrl}/patients/webhook/images`;
     
+    console.log('🔵 [API-18] Calling: POST /patients/webhook/images - Upload Images');
     const formData = new FormData();
     formData.append('patient_id', appointment.patient_id);
     formData.append('visit_id', appointment.visit_id);
+    formData.append('doctor_id', doctorUserCode);
     formData.append('language', 'en');
 
     // Add multiple images as the API expects (`images`)
@@ -728,6 +890,7 @@ async uploadImages(id: number, files: Express.Multer.File[]): Promise<any> {
       headers: {
         ...formData.getHeaders(),
         'X-API-Key': ClinicAIID,
+        'X-Doctor-ID': doctorUserCode,
         'Accept': 'application/json',
       },
     });
@@ -737,7 +900,7 @@ async uploadImages(id: number, files: Express.Multer.File[]): Promise<any> {
     return externalResponse.data;
 
   } catch (error: any) {
-    console.error("❌ External API Error:");
+    console.error("❌ [API-18] External API Error:");
     console.error(error.response?.data || error.message);
 
     throw new Error(`External API upload failed: ${error.message}`);
@@ -750,44 +913,76 @@ async getImages(id: number): Promise<any> {
   let images:any = [];
 
   try {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+    
+    if (!doctorUserCode) {
+      console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+      return { images };
+    }
+
     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
     
     
-    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/images',
+    console.log('🔵 [API-19] Calling: GET /patients/{patient_id}/visits/{visit_id}/images - Get Images');
+    const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/images?doctor_id='+doctorUserCode,
       {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-API-Key': ClinicAIID,
+          'X-Doctor-ID': doctorUserCode,
         },
       },
     );
     images = externalResponse.data;
 
   } catch (error) {
-    console.error('❌ External API call failed:', error.response?.data || error.message);
+    console.error('❌ [API-19] External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
   }
 
   return { images };
 }
 
-async removeImage(id: string): Promise<any> {
+async removeImage(id: string, doctorId?: number): Promise<any> {
 
   try {
-    const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-    const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-    const externalResponse = await axios.delete(baseUrl+'patients/images/'+id,
-      {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'X-API-Key': ClinicAIID,
+    // If doctorId is provided, validate doctor user_code
+    if (doctorId) {
+      const doctorUserCode = await this.getDoctorUserCode(doctorId);
+      
+      if (!doctorUserCode) {
+        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        return {
+          success: false,
+          message: 'Doctor user_code is empty. API call cannot be made.',
+        };
+      }
+
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      console.log('🔵 [API-20] Calling: DELETE /patients/images/{id} - Remove Image');
+      const externalResponse = await axios.delete(baseUrl+'patients/images/'+id+'?doctor_id='+doctorUserCode,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+            'X-Doctor-ID': doctorUserCode,
+          },
         },
-      },
-    );
-    console.log(externalResponse.data);
+      );
+      console.log(externalResponse.data);
+    } else {
+      // If doctorId is not provided, skip the API call
+      console.error('❌ Doctor ID not provided. API call skipped.');
+      return {
+        success: false,
+        message: 'Doctor ID is required for API call.',
+      };
+    }
   } catch (error) {
     console.error('❌ External API call failed:', error.response?.data || error.message);
     // Optionally: return error or continue even if external call fails
