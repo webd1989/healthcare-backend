@@ -8,10 +8,10 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   user_code: string;
 
-  @Column()
+  @Column({ nullable: true })
   type: string;
 
   @Column({ nullable: true })
@@ -23,7 +23,7 @@ export class User {
   @Column({ nullable: true })
   doctor_id: number;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
   @Column({ unique: true })

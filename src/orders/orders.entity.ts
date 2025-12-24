@@ -6,7 +6,7 @@ export class Orders {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   invoice_no: string;
 
   @Column()
@@ -18,16 +18,16 @@ export class Orders {
   @Column()
   user_id: number;
 
-  @Column()
+  @Column({ nullable: true })
   transaction_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   plan_type: string;
 
-  @Column()
+  @Column({ nullable: true })
   user_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   user_email: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -36,13 +36,13 @@ export class Orders {
   @Column('decimal', { precision: 10, scale: 2 })
   grand_total: string;
 
-  @Column()
+  @Column({ nullable: true })
   templates: string;
 
-  @Column()
+  @Column({ nullable: true })
   medical_dictation: string;
 
-  @Column()
+  @Column({ nullable: true })
   ai_assisted: string;
   
   @Column({ type: 'timestamp', nullable: true })
