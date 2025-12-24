@@ -58,7 +58,7 @@ async getDashboardData(
   return { records: data, success: true };
 }
 
-@UseGuards(AuthGuard('jwt'))
+// Public endpoint - no auth required
 @Post("appointment-save-questions/:id")
 async appointmentSaveQuestions(
   @Param('id') id: number,
@@ -353,7 +353,7 @@ async saveTranscribe(
   }
 
 
-@UseGuards(AuthGuard('jwt'))
+// Public endpoint - no auth required
 @Get('get-images/:id')
 async getImages(
   @Param('id') id: number
@@ -367,7 +367,7 @@ async getImages(
   }
 
 
-@UseGuards(AuthGuard('jwt'))
+// Public endpoint - no auth required
 @Delete('delete-image/:id')
 removeImage(@Param('id') id: string) {
     return this.appointmentsService.removeImage(id);

@@ -28,7 +28,7 @@ async create(
     data: patient,
   };
 }
-@UseGuards(AuthGuard('jwt'))
+// Public endpoint - no auth required
 @Post("consultations-answer/:id")
 async consultationsAnswer(
   @Param('id') id: string,
@@ -42,7 +42,7 @@ async consultationsAnswer(
     data: data,
   };
 }
-@UseGuards(AuthGuard('jwt'))
+// Public endpoint - no auth required
 @Post("consultations-answer-edit/:id")
 async consultationsAnswerEdit(
   @Param('id') id: string,
