@@ -49,7 +49,8 @@ export class TemplatesService {
  async getAllTemplates(doctor_id: number): Promise<Templates[]> {
     return this.templateRepo.find({
       where: {
-        doctor_id: doctor_id
+        doctor_id: doctor_id,
+        status: 1  // Only return active templates
       },
     });
   }
