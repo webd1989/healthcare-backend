@@ -69,6 +69,9 @@ export class Appointment{
   @Column({ nullable: true, default:'No' })
   previsit_created: string;
 
+  @Column({ nullable: true, default:'No' })
+  postvisit_created: string;
+
   @CreateDateColumn({ nullable: true,type: 'timestamp' })
   created_at: Date;
 

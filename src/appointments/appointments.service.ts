@@ -384,6 +384,45 @@ async findOne(id: number): Promise<any> {
 
   }
 
+  // Generate Postvisit Summary if SOAP is generated and postvisit not yet created
+  if(appointment.soap_generated == "Yes" && appointment.postvisit_created == "No"){
+
+    try {
+        // Get doctor user_code for X-Doctor-ID header
+        const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+        
+        if (!doctorUserCode) {
+          console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+        } else {
+          const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+          const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+          
+          console.log('🔵 [API-7B] Calling: POST /patients/summary/postvisit - Postvisit Summary');
+          const externalResponse = await axios.post(baseUrl+'patients/summary/postvisit',
+            {
+              patient_id: appointment.patient_id,
+              visit_id: appointment.visit_id,
+              doctor_id: doctorUserCode,
+            },
+            {
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-API-Key': ClinicAIID,
+                'X-Doctor-ID': doctorUserCode,
+              },
+            },
+          );
+          
+          await this.appointmentRepo.update(appointment.id, { postvisit_created: "Yes" });
+        }
+      } catch (error) {
+       // console.error('❌ External API call failed:', error.response?.data || error.message);
+        // Optionally: return error or continue even if external call fails
+      }
+
+  }
+
  let summaryData = [];
  let postvisitData = [];
   if(appointment.previsit_created == "Yes"){
@@ -555,22 +594,8 @@ async saveTranscribe(id: number, file: Express.Multer.File, template: string): P
     let status = externalResponse.data.status ?? "pending";
     await this.appointmentRepo.update(id, { transcribe_status: status, template_id:template });
 
-    //generate post visit
-    console.log('🔵 [API-12] Calling: POST /patients/summary/postvisit - Generate Postvisit');
-    await axios.post(baseUrl+'patients/summary/postvisit',
-    {
-      patient_id: appointment.patient_id,
-      visit_id: appointment.visit_id,
-      doctor_id: doctorUserCode,
-    },
-    {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-API-Key': ClinicAIID,
-        'X-Doctor-ID': doctorUserCode,
-      },
-    });
+    // Postvisit summary will be generated automatically in findOne method 
+    // when soap_generated == "Yes" and postvisit_created == "No"
 
     return externalResponse.data;
 
@@ -1168,6 +1193,7 @@ async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any>
         question_answers: '',
         appointment_vitals: '',
         previsit_created: '',
+        postvisit_created: '',
         transcribe_status: '',
         soap_generated: '',
         quick_notes: '',

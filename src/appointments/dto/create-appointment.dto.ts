@@ -103,6 +103,10 @@ export class CreateAppointmentDto {
   
   @IsString()
   @IsOptional()
+  postvisit_created: string
+  
+  @IsString()
+  @IsOptional()
   transcribe_status: string
   
   @IsString()
