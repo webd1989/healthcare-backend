@@ -29,57 +29,58 @@ export class PatientsService {
 
   async create(dto: CreatePatientDto): Promise<any> {
 
-     try {
-      // Get doctor user_code for X-Doctor-ID header
-      const doctor = await this.userRepo.findOne({ 
-        where: { id: dto.doctor_id, type: 'Doctor' } 
-      });
+     // Commented out - API call moved to appointments.service.ts
+     // try {
+     //   // Get doctor user_code for X-Doctor-ID header
+     //   const doctor = await this.userRepo.findOne({ 
+     //     where: { id: dto.doctor_id, type: 'Doctor' } 
+     //   });
 
-      if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
-        console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
-        // Skip API call if user_code is empty
-      } else {
-        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-        
-        console.log('🔵 [API-1] Calling: POST /patients/ - Create Patient');
-        const externalResponse = await axios.post(baseUrl+'patients/',
-          {
-            first_name: dto.first_name,
-            last_name: dto.last_name,
-            mobile: dto.mobile,
-            age: dto.age,
-            gender: dto.gender,
-            recently_travelled: dto.recently_travelled ?? false,
-            consent: dto.consent ?? true,
-            country: dto.country ?? 'US',
-            language: dto.language ?? 'en',
-            doctor_id: doctor.user_code,
-          },
-          {
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-API-Key': ClinicAIID,
-              'X-Doctor-ID': doctor.user_code,
-            },
-          },
-        );
+     //   if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
+     //     console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+     //     // Skip API call if user_code is empty
+     //   } else {
+     //     const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+     //     const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+     //     
+     //     console.log('🔵 [API-1] Calling: POST /patients/ - Create Patient');
+     //     const externalResponse = await axios.post(baseUrl+'patients/',
+     //       {
+     //         first_name: dto.first_name,
+     //         last_name: dto.last_name,
+     //         mobile: dto.mobile,
+     //         age: dto.age,
+     //         gender: dto.gender,
+     //         recently_travelled: dto.recently_travelled ?? false,
+     //         consent: dto.consent ?? true,
+     //         country: dto.country ?? 'US',
+     //         language: dto.language ?? 'en',
+     //         doctor_id: doctor.user_code,
+     //       },
+     //       {
+     //         headers: {
+     //           Accept: 'application/json',
+     //           'Content-Type': 'application/json',
+     //           'X-API-Key': ClinicAIID,
+     //           'X-Doctor-ID': doctor.user_code,
+     //         },
+     //       },
+     //     );
 
-        const externalData = externalResponse.data?.data;
+     //     const externalData = externalResponse.data?.data;
 
-        dto.patient_id = externalData?.patient_id;
-        dto.visit_id = externalData?.visit_id;
-        dto.first_question = externalData?.first_question;
+     //     dto.patient_id = externalData?.patient_id;
+     //     dto.visit_id = externalData?.visit_id;
+     //     dto.first_question = externalData?.first_question;
 
-       // console.log(dto);
-        
-       // console.log('External API Response:', externalResponse.data);
-      }
-    } catch (error) {
-      console.error('❌ [API-1] External API call failed:', error.response?.data || error.message);
-      // Optionally: return error or continue even if external call fails
-    }
+     //    // console.log(dto);
+     //    
+     //    // console.log('External API Response:', externalResponse.data);
+     //   }
+     // } catch (error) {
+     //   console.error('❌ [API-1] External API call failed:', error.response?.data || error.message);
+     //   // Optionally: return error or continue even if external call fails
+     // }
 
   
     const patient = this.patientRepo.create(dto);

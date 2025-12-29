@@ -116,9 +116,24 @@ export class AppointmentsService {
         );
 
         const externalData = externalResponse.data?.data;
-
         dto.patient_id = externalData?.patient_id;
         dto.visit_id = externalData?.visit_id;
+        
+        // Save first_question to patient record if patient exists
+        if (externalData?.first_question && dto.user_id) {
+          try {
+            const patient = await this.patientsRepo.findOne({ 
+              where: { id: Number(dto.user_id) } 
+            });
+            if (patient) {
+              await this.patientsRepo.update(patient.id, { 
+                first_question: externalData.first_question 
+              });
+            }
+          } catch (updateError) {
+            console.error('❌ Failed to update patient first_question:', updateError);
+          }
+        }
       }
   
       // console.log(dto);
