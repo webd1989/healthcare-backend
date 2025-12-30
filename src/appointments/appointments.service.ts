@@ -128,7 +128,8 @@ export class AppointmentsService {
             if (patient) {
               await this.patientsRepo.update(patient.id, { 
                 first_question: externalData.first_question,
-                patient_id: externalData.patient_id 
+                patient_id: externalData.patient_id ,
+                visit_id: externalData.visit_id 
               });
             }
           } catch (updateError) {
