@@ -119,21 +119,32 @@ export class AppointmentsService {
         dto.patient_id = externalData?.patient_id;
         dto.visit_id = externalData?.visit_id;
         
-        // Save first_question to patient record if patient exists
-        if (externalData?.first_question && dto.user_id) {
+        // Save patient_id and visit_id always, and first_question if it exists
+        if (dto.user_id && (externalData?.patient_id || externalData?.visit_id || externalData?.first_question)) {
           try {
             const patient = await this.patientsRepo.findOne({ 
               where: { id: Number(dto.user_id) } 
             });
             if (patient) {
-              await this.patientsRepo.update(patient.id, { 
-                first_question: externalData.first_question,
-                patient_id: externalData.patient_id ,
-                visit_id: externalData.visit_id 
-              });
+              const updateData: any = {};
+              
+              // Always save patient_id and visit_id if they exist
+              if (externalData?.patient_id) {
+                updateData.patient_id = externalData.patient_id;
+              }
+              if (externalData?.visit_id) {
+                updateData.visit_id = externalData.visit_id;
+              }
+              
+              // Save first_question only if it exists
+              if (externalData?.first_question) {
+                updateData.first_question = externalData.first_question;
+              }
+              
+              await this.patientsRepo.update(patient.id, updateData);
             }
           } catch (updateError) {
-            console.error('❌ Failed to update patient first_question:', updateError);
+            console.error('❌ Failed to update patient data:', updateError);
           }
         }
       }
