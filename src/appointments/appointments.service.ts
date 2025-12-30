@@ -162,55 +162,55 @@ export class AppointmentsService {
 
  async createPatient(data: Partial<Patients>): Promise<Patients> {
 
-   try {
-        // Get doctor user_code for X-Doctor-ID header
-        const doctorUserCode = data.doctor_id ? await this.getDoctorUserCode(data.doctor_id) : null;
+  //  try {
+  //       // Get doctor user_code for X-Doctor-ID header
+  //       const doctorUserCode = data.doctor_id ? await this.getDoctorUserCode(data.doctor_id) : null;
         
-        if (!doctorUserCode) {
-          console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
-          // Skip API call if user_code is empty
-        } else {
-          const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-          const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+  //       if (!doctorUserCode) {
+  //         console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
+  //         // Skip API call if user_code is empty
+  //       } else {
+  //         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+  //         const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
           
-          console.log('🔵 [API-5] Calling: POST /patients/ - Create Patient (createPatient)');
-          const externalResponse = await axios.post(baseUrl+'patients/',
-            {
-              first_name: data.first_name,
-              last_name: data.last_name,
-              mobile: data.mobile,
-              age: data.age,
-              gender: data.gender,
-              recently_travelled: data.recently_travelled ?? false,
-              consent: data.consent ?? true,
-              country: data.country ?? 'US',
-              language: data.language ?? 'en',
-              doctor_id: doctorUserCode,
-            },
-            {
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-API-Key': ClinicAIID,
-                'X-Doctor-ID': doctorUserCode,
-              },
-            },
-          );
+  //         console.log('🔵 [API-5] Calling: POST /patients/ - Create Patient (createPatient)');
+  //         const externalResponse = await axios.post(baseUrl+'patients/',
+  //           {
+  //             first_name: data.first_name,
+  //             last_name: data.last_name,
+  //             mobile: data.mobile,
+  //             age: data.age,
+  //             gender: data.gender,
+  //             recently_travelled: data.recently_travelled ?? false,
+  //             consent: data.consent ?? true,
+  //             country: data.country ?? 'US',
+  //             language: data.language ?? 'en',
+  //             doctor_id: doctorUserCode,
+  //           },
+  //           {
+  //             headers: {
+  //               Accept: 'application/json',
+  //               'Content-Type': 'application/json',
+  //               'X-API-Key': ClinicAIID,
+  //               'X-Doctor-ID': doctorUserCode,
+  //             },
+  //           },
+  //         );
   
-          const externalData = externalResponse.data?.data;
+  //         const externalData = externalResponse.data?.data;
   
-          data.patient_id = externalData?.patient_id;
-          data.visit_id = externalData?.visit_id;
-          data.first_question = externalData?.first_question;
-        }
+  //         data.patient_id = externalData?.patient_id;
+  //         data.visit_id = externalData?.visit_id;
+  //         data.first_question = externalData?.first_question;
+  //       }
   
-       // console.log(dto);
+  //      // console.log(dto);
         
-       // console.log('External API Response:', externalResponse.data);
-      } catch (error) {
-        console.error('❌ [API-5] External API call failed:', error.response?.data || error.message);
-        // Optionally: return error or continue even if external call fails
-      }
+  //      // console.log('External API Response:', externalResponse.data);
+  //     } catch (error) {
+  //       console.error('❌ [API-5] External API call failed:', error.response?.data || error.message);
+  //       // Optionally: return error or continue even if external call fails
+  //     }
 
     const newPatient = this.patientsRepo.create(data); 
     return await this.patientsRepo.save(newPatient);
