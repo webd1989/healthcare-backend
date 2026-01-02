@@ -286,7 +286,8 @@ export class AppointmentsService {
 
   // Status filter - ensure mutually exclusive conditions
   if (type === 'Scheduled') {
-    // Only future appointments (exclude in-progress appointments)
+    // Only future appointments (exclude in-progress and completed appointments)
+    // Must be in the future (not started yet)
     query.andWhere(`${appointmentDateTime} > :now`, { now });
   }
 
