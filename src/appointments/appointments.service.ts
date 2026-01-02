@@ -284,12 +284,14 @@ export class AppointmentsService {
   // Combine appointment date + time (MySQL syntax)
   const appointmentDateTime = `STR_TO_DATE(CONCAT(appointment.appointment_date, ' ', appointment.appointment_time), '%Y-%m-%d %H:%i:%s')`;
 
-  // Status filter
+  // Status filter - ensure mutually exclusive conditions
   if (type === 'Scheduled') {
+    // Only future appointments (exclude in-progress appointments)
     query.andWhere(`${appointmentDateTime} > :now`, { now });
   }
 
   if (type === 'In Progress') {
+    // Only appointments within 30 minutes window (exclude future and completed)
     query.andWhere(
       `${appointmentDateTime} <= :now AND DATE_ADD(${appointmentDateTime}, INTERVAL 30 MINUTE) >= :now`,
       { now }
@@ -297,6 +299,7 @@ export class AppointmentsService {
   }
 
   if (type === 'Completed') {
+    // Only appointments more than 30 minutes past
     query.andWhere(
       `DATE_ADD(${appointmentDateTime}, INTERVAL 30 MINUTE) < :now`,
       { now }
