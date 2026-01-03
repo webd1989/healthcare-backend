@@ -1248,6 +1248,8 @@ async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any>
         soap_generated: '',
         quick_notes: '',
         tasks: '',
+        address: String(row['Address'] || row['address'] || ''),
+        emergency_contact: String(row['Emergency Contact'] || row['emergency_contact'] || ''),
       };
 
       // Validate required fields
