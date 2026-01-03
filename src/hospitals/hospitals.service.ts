@@ -27,7 +27,11 @@ export class HospitalsService {
   }
 
   async findAll(): Promise<Hospital[]> {
-    return this.hospitalRepo.find();
+    return this.hospitalRepo.find({
+      order: {
+        id: 'DESC'
+      }
+    });
   }
 
   async paginate(page: number, limit: number, searchTitle?: string) {
@@ -41,6 +45,7 @@ export class HospitalsService {
       }
 
       const [data, total] = await query
+        .orderBy('hospital.id', 'DESC')
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();

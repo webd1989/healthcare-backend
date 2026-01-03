@@ -43,6 +43,9 @@ export class TemplatesService {
       where: {
         hospital_id: hospital_id,
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -52,6 +55,9 @@ export class TemplatesService {
         doctor_id: doctor_id,
         status: 1  // Only return active templates
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -80,6 +86,7 @@ export class TemplatesService {
     }
 
     const [data, total] = await query
+      .orderBy('template.id', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();

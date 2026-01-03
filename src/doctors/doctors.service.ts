@@ -41,6 +41,9 @@ export class DoctorsService {
         hospital_id: hospital_id,
         type: 'doctor',
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -63,6 +66,7 @@ async paginate(page: number, limit: number, searchTitle?: string, searchStatus?:
   }
 
   const [data, total] = await query
+    .orderBy('doctor.id', 'DESC')
     .skip((page - 1) * limit)
     .take(limit)
     .getManyAndCount();

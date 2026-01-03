@@ -49,6 +49,12 @@ export class Patients {
   @Column({ nullable: true, default: 'en' })
   language: string;
 
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  emergency_contact: string;
+
   @Column()
   status: number;
 

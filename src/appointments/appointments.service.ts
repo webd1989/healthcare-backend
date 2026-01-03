@@ -230,6 +230,10 @@ export class AppointmentsService {
     
 }
 
+  async updatePatient(id: number, data: Partial<Patients>): Promise<void> {
+    await this.patientsRepo.update(id, data);
+  }
+
    async getUserById(user_id: any): Promise<User | null> {
       return this.userRepo.findOne({ where: { id: user_id } });
     }
@@ -239,7 +243,13 @@ export class AppointmentsService {
     }
 
   async findAll(): Promise<Appointment[]> {
-    return this.appointmentRepo.find();
+    return this.appointmentRepo.find({
+      order: {
+        appointment_date: 'DESC',
+        appointment_time: 'DESC',
+        id: 'DESC'
+      }
+    });
   }
 
   async findAPTAll(doctorId?: number): Promise<Appointment[]> {
@@ -250,8 +260,10 @@ export class AppointmentsService {
       query.andWhere('appointment.doctor_id = :doctorId', { doctorId });
     }
 
-    // Optional: order by date/time
-    query.orderBy('appointment.appointment_time', 'ASC');
+    // Order by date/time DESC (latest first)
+    query.orderBy('appointment.appointment_date', 'DESC');
+    query.addOrderBy('appointment.appointment_time', 'DESC');
+    query.addOrderBy('appointment.id', 'DESC');
 
     // Execute and return results
     return await query.getMany();
@@ -307,9 +319,11 @@ export class AppointmentsService {
     );
   }
 
-  // Pagination
+  // Pagination - Order by date, time, and id DESC (latest first)
   const [data, total] = await query
     .orderBy('appointment.appointment_date', 'DESC')
+    .addOrderBy('appointment.appointment_time', 'DESC')
+    .addOrderBy('appointment.id', 'DESC')
     .skip((page - 1) * limit)
     .take(limit)
     .getManyAndCount();
@@ -664,6 +678,10 @@ async getDashboardData(
   // appointment_date column format: YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
   query.andWhere('appointment.appointment_date = :today', { today });
+
+  // Order by time and id DESC (latest first)
+  query.orderBy('appointment.appointment_time', 'DESC');
+  query.addOrderBy('appointment.id', 'DESC');
 
   // Fetch records
   return await query.getMany();

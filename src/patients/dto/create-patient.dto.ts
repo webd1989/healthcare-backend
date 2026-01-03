@@ -62,4 +62,12 @@ export class CreatePatientDto {
   @IsString()
   first_question: string;
 
+  @IsOptional()
+  @IsString()
+  address: string;
+
+  @IsOptional()
+  @IsString()
+  emergency_contact: string;
+
 }

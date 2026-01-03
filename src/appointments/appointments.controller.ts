@@ -110,7 +110,17 @@ async create(
         doctor_id: Number(dto.doctor_id),
         hospital_id: doctor.hospital_id,
         status: 1,
+        address: dto.address || '',
+        emergency_contact: dto.emergency_contact || '',
       });
+    } else {
+      // Update existing patient with address and emergency_contact if provided
+      if (dto.address !== undefined || dto.emergency_contact !== undefined) {
+        const updateData: any = {};
+        if (dto.address !== undefined) updateData.address = dto.address;
+        if (dto.emergency_contact !== undefined) updateData.emergency_contact = dto.emergency_contact;
+        await this.appointmentsService.updatePatient(Number(dto.user_id), updateData);
+      }
     }
   
     dto.user_id = user.id;

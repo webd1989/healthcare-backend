@@ -256,6 +256,9 @@ export class PatientsService {
       where: {
         hospital_id: hospital_id,
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -265,6 +268,9 @@ export class PatientsService {
         doctor_id: doctor_id,
         mobile: user_mobile,
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -293,6 +299,7 @@ export class PatientsService {
     }
 
     const [data, total] = await query
+      .orderBy('patient.id', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();

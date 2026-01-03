@@ -39,6 +39,9 @@ export class StaffsService {
         hospital_id: hospital_id,
         type: 'staff',
       },
+      order: {
+        id: 'DESC'
+      }
     });
   }
 
@@ -66,6 +69,7 @@ export class StaffsService {
   }
 
   const [data, total] = await query
+    .orderBy('staff.id', 'DESC')
     .skip((page - 1) * limit)
     .take(limit)
     .getManyAndCount();

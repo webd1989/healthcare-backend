@@ -50,7 +50,11 @@ export class OrdersService {
   }
 
   async findAll(): Promise<Orders[]> {
-    return this.orderRepo.find();
+    return this.orderRepo.find({
+      order: {
+        id: 'DESC'
+      }
+    });
   }
 
   async paginate(page: number, limit: number, searchTitle?: string, doctorId?: number) {
@@ -69,6 +73,7 @@ export class OrdersService {
       }
 
       const [data, total] = await query
+        .orderBy('order.id', 'DESC')
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();

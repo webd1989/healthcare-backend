@@ -129,4 +129,12 @@ export class CreateAppointmentDto {
   @IsNotEmpty()
   chief_complaint: string;
 
+  @IsString()
+  @IsOptional()
+  address: string;
+
+  @IsString()
+  @IsOptional()
+  emergency_contact: string;
+
 }

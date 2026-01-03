@@ -70,7 +70,11 @@ export class SupportTicketsService {
 }
 
   async findAll(): Promise<SupportTickets[]> {
-    return this.supportTicketRepo.find();
+    return this.supportTicketRepo.find({
+      order: {
+        id: 'DESC'
+      }
+    });
   }
 
   async paginate(page: number, limit: number, searchTitle?:string, userID?:number, userType?:string) {
@@ -88,6 +92,7 @@ export class SupportTicketsService {
       }
 
       const [data, total] = await query
+        .orderBy('supportTicket.id', 'DESC')
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
