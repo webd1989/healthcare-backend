@@ -7,10 +7,11 @@ import { User } from 'src/auth/user.entity';
 import { Patients } from 'src/patients/patients.entity';
 import { Patientform } from 'src/patientforms/patientforms.entity';
 import { Templates } from 'src/templates/templates.entity';
+import { ClinicAIService } from '../common/clinic-ai.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Appointment, User, Patientform, Patients, Templates])],
-  providers: [AppointmentsService],
+  providers: [AppointmentsService, ClinicAIService],
   controllers: [AppointmentsController],
 })
 export class AppointmentsModule {}

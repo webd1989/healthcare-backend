@@ -16,6 +16,7 @@ import FormData from 'form-data';
 // @ts-ignore
 const XLSX = require('xlsx');
 import * as bcrypt from 'bcrypt';
+import { ClinicAIService } from '../common/clinic-ai.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -36,7 +37,8 @@ export class AppointmentsService {
     @InjectRepository(Templates)
     private readonly TemplatesRepo: Repository<Templates>,
 
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly clinicAIService: ClinicAIService,
 
   ) {}
 
@@ -63,20 +65,43 @@ export class AppointmentsService {
    * @param doctorId - The doctor ID
    * @returns Doctor user_code or null if not found or empty
    */
+  // Use shared service method instead
   private async getDoctorUserCode(doctorId: number): Promise<string | null> {
-    if (!doctorId || doctorId <= 0) {
-      return null;
+    return this.clinicAIService.getDoctorUserCode(doctorId);
+  }
+
+  /**
+   * Common method to get previsit summary from external API
+   * Can be used in multiple places (findOne, controller endpoint, etc.)
+   */
+  async getPrevisitSummary(patientId: string, visitId: string, doctorId: number): Promise<any> {
+    // Get doctor user_code for X-Doctor-ID header
+    const doctorUserCode = await this.getDoctorUserCode(doctorId);
+      
+    if (!doctorUserCode) {
+      throw new Error('Doctor user_code is empty or doctor not found.');
     }
-    
-    const doctor = await this.userRepo.findOne({ 
-      where: { id: doctorId, type: 'Doctor' } 
-    });
-    
-    if (!doctor || !doctor.user_code || doctor.user_code.trim() === '') {
-      return null;
+
+    try {
+      const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
+      const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
+      
+      console.log('🔵 [API-8] Calling: GET /patients/{patient_id}/visits/{visit_id}/summary - Get Summary');
+      const externalResponse = await axios.get(baseUrl+'/patients/'+patientId+'/visits/'+visitId+'/summary',
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-API-Key': ClinicAIID,
+            'X-Doctor-ID': doctorUserCode,
+          },
+        },
+      );
+      return externalResponse.data;    
+    } catch (error) {
+      console.error('❌ External API call failed:', error.response?.data || error.message);
+      throw error;
     }
-    
-    return doctor.user_code;
   }
 
   async create(dto: CreateAppointmentDto): Promise<any> {
@@ -395,34 +420,16 @@ async findOne(id: number): Promise<any> {
   if(appointment.visit_id !== "" && appointment.question_answers != '' && appointment.question_answers != null && appointment.previsit_created == 'No'){
 
     try {
-        // Get doctor user_code for X-Doctor-ID header
-        const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
-        
-        if (!doctorUserCode) {
-          console.error('❌ Doctor user_code is empty or doctor not found. API call skipped.');
-        } else {
-          const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-          const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-          
-          console.log('🔵 [API-7] Calling: POST /patients/summary/previsit - Previsit Summary');
-          const externalResponse = await axios.post(baseUrl+'patients/summary/previsit',
-            {
-              patient_id: appointment.patient_id,
-              visit_id: appointment.visit_id,
-              doctor_id: doctorUserCode,
-            },
-            {
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-API-Key': ClinicAIID,
-                'X-Doctor-ID': doctorUserCode,
-              },
-            },
-          );
-          
-          await this.appointmentRepo.update(appointment.id, { previsit_created: "Yes" });
-        }
+        // Use shared service to generate previsit summary
+        await this.clinicAIService.generatePrevisitSummary(
+          appointment.patient_id,
+          appointment.visit_id,
+          Number(appointment.doctor_id),
+          async () => {
+            // Update callback: mark previsit as created
+            await this.appointmentRepo.update(appointment.id, { previsit_created: "Yes" });
+          },
+        );
       } catch (error) {
        // console.error('❌ External API call failed:', error.response?.data || error.message);
         // Optionally: return error or continue even if external call fails
@@ -466,42 +473,27 @@ async findOne(id: number): Promise<any> {
        // console.error('❌ External API call failed:', error.response?.data || error.message);
         // Optionally: return error or continue even if external call fails
       }
-
   }
 
- let summaryData = [];
- let postvisitData = [];
+  let summaryData = [];
+  let postvisitData = [];
   if(appointment.previsit_created == "Yes"){
-    // Get doctor user_code for X-Doctor-ID header
-    const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
-      
-    if (!doctorUserCode) {
-      console.error('❌ Doctor user_code is empty or doctor not found. API calls skipped.');
-    } else {
-      try {
-        const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
-        const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
-        
-        console.log('🔵 [API-8] Calling: GET /patients/{patient_id}/visits/{visit_id}/summary - Get Summary');
-        const externalResponse = await axios.get(baseUrl+'/patients/'+appointment.patient_id+'/visits/'+appointment.visit_id+'/summary',
-          {
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-API-Key': ClinicAIID,
-              'X-Doctor-ID': doctorUserCode,
-            },
-          },
-        );
-        summaryData = externalResponse.data;    
-        
-      } catch (error) {
-        //console.error('❌ External API call failed:', error.response?.data || error.message);
-        // Optionally: return error or continue even if external call fails
-      }
+    try {
+      // Use common method to get previsit summary
+      summaryData = await this.getPrevisitSummary(
+        appointment.patient_id,
+        appointment.visit_id,
+        Number(appointment.doctor_id)
+      );
+    } catch (error) {
+      // Log error but don't fail the main request
+      console.error('❌ Previsit summary fetch failed:', error.response?.data || error.message);
+    }
 
-    
-      try {
+    // Get postvisit summary if available
+    try {
+      const doctorUserCode = await this.getDoctorUserCode(Number(appointment.doctor_id));
+      if (doctorUserCode) {
         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
         const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
         console.log('🔵 [API-9] Calling: GET /patients/{patient_id}/visits/{visit_id}/summary/postvisit - Get Postvisit Summary');
@@ -516,12 +508,12 @@ async findOne(id: number): Promise<any> {
           },
         );
         postvisitData = externalResponse.data;  
-      } catch (error) {
-        //console.error('❌ External API call failed:', error.response?.data || error.message);
-        // Optionally: return error or continue even if external call fails
       }
+    } catch (error) {
+      //console.error('❌ External API call failed:', error.response?.data || error.message);
+      // Optionally: return error or continue even if external call fails
     }
-}
+  }
 
   return { ...appointment, patientForm, patient, summaryData, postvisitData };
 }
@@ -532,7 +524,35 @@ async findOne(id: number): Promise<any> {
     }
     const appointment = await this.findOne(id);
     Object.assign(appointment, dto);
-    return this.appointmentRepo.save(appointment);
+    const savedAppointment = await this.appointmentRepo.save(appointment);
+    
+    // Generate previsit summary if question_answers is being updated
+    if (dto.question_answers !== undefined && dto.question_answers !== null && dto.question_answers !== '') {
+      // Check if conditions are met for previsit summary generation
+      if (savedAppointment.visit_id !== "" && 
+          savedAppointment.question_answers != '' && 
+          savedAppointment.question_answers != null && 
+          savedAppointment.previsit_created == 'No') {
+        
+        try {
+          // Use shared service to generate previsit summary
+          await this.clinicAIService.generatePrevisitSummary(
+            savedAppointment.patient_id,
+            savedAppointment.visit_id,
+            Number(savedAppointment.doctor_id),
+            async () => {
+              // Update callback: mark previsit as created
+              await this.appointmentRepo.update(savedAppointment.id, { previsit_created: "Yes" });
+            },
+          );
+        } catch (error) {
+          // console.error('❌ External API call failed:', error.response?.data || error.message);
+          // Optionally: return error or continue even if external call fails
+        }
+      }
+    }
+    
+    return savedAppointment;
   }
 
 async updateVitals(id: number, dto: UpdateAppointmentDto): Promise<any> {
@@ -1100,7 +1120,7 @@ async generateSampleFile(): Promise<Buffer> {
   }
 }
 
-async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any> {
+  async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any> {
   if (!doctorId || isNaN(doctorId) || doctorId <= 0) {
     throw new Error('Valid doctor_id is required');
   }
@@ -1329,5 +1349,4 @@ async importFromExcel(file: Express.Multer.File, doctorId: number): Promise<any>
 
   return results;
 }
-
 }

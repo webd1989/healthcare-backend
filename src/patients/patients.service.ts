@@ -10,6 +10,7 @@ import { log } from 'console';
 import * as qs from 'qs';
 import { User } from '../auth/user.entity';
 import { Hospital } from '../hospitals/hospital.entity';
+import { ClinicAIService } from '../common/clinic-ai.service';
 
 
 @Injectable()
@@ -24,7 +25,8 @@ export class PatientsService {
     @InjectRepository(User)
     private userRepo: Repository<User>,
 
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly clinicAIService: ClinicAIService,
   ) {}
 
   async create(dto: CreatePatientDto): Promise<any> {

@@ -80,6 +80,39 @@ async findOneData(@Param('id') id: number) {
   };
 }
 
+@UseGuards(AuthGuard('jwt'))
+@Get('/previsit-summary/:id')
+async getPrevisitSummary(@Param('id') id: number) {
+  const appointment = await this.appointmentsService.findOne(id);
+  if (!appointment) {
+    throw new NotFoundException(`Appointment ${id} not found`);
+  }
+  
+  if (appointment.previsit_created !== 'Yes') {
+    return {
+      success: false,
+      message: 'Previsit summary not yet created for this appointment',
+    };
+  }
+
+  try {
+    const summaryData = await this.appointmentsService.getPrevisitSummary(
+      appointment.patient_id,
+      appointment.visit_id,
+      Number(appointment.doctor_id)
+    );
+    return {
+      success: true,
+      data: summaryData,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Failed to fetch previsit summary',
+    };
+  }
+}
+
   @UseGuards(AuthGuard('jwt'))
 @Post()
 async create(
