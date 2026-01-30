@@ -49,6 +49,9 @@ export class Appointment{
   visit_type: string;
 
   @Column({ nullable: true })
+  workflow_type: string;
+
+  @Column({ nullable: true })
   chief_complaint: string;
 
   @Column({ nullable: true })

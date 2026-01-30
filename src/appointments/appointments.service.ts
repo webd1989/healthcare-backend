@@ -129,6 +129,7 @@ export class AppointmentsService {
             country: 'US',
             language: 'en',
             doctor_id: doctorUserCode,
+            workflow_type: dto.workflow_type ?? null,
           },
           {
             headers: {
@@ -1250,6 +1251,7 @@ async generateSampleFile(): Promise<Buffer> {
         appointment_time: parseTime(rawTime),
         visit_type: String(row['Visit Type'] || row['visit_type'] || ''),
         chief_complaint: String(row['Chief Complaint'] || row['chief_complaint'] || ''),
+        workflow_type: String(row['Workflow Type'] || row['workflow_type'] || 'Schedule'),
         doctor_id: String(doctorId),
         user_id: '',
         appointment_no: '',

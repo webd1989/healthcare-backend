@@ -126,6 +126,10 @@ export class CreateAppointmentDto {
   visit_type: string;
 
   @IsString()
+  @IsOptional()
+  workflow_type: string;
+
+  @IsString()
   @IsNotEmpty()
   chief_complaint: string;
 
