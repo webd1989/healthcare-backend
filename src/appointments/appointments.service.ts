@@ -117,7 +117,7 @@ export class AppointmentsService {
         const baseUrl = this.configService.get<string>('NEXT_PUBLIC_CLINIC_AI_BASE_URL');
         const ClinicAIID = this.configService.get<string>('CLINIC_AI_KEY');
         console.log('🔵 [API-4] Calling: POST /patients/ - Create Patient (Appointment)');
-        const externalResponse = await axios.post(baseUrl+'patients/',
+        const externalResponse = await axios.post(baseUrl+'patients/register/',
           {
             first_name: dto.user_first_name,
             last_name: dto.user_last_name,
